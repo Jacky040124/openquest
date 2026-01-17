@@ -6,7 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 from sqlalchemy import ARRAY, DateTime, String, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -25,10 +26,10 @@ class SkillCategory(str, Enum):
 class Familiarity(str, Enum):
     """Skill familiarity/proficiency level enumeration"""
 
-    BEGINNER = "beginner"          # 初学者 - 了解基础概念
+    BEGINNER = "beginner"  # 初学者 - 了解基础概念
     INTERMEDIATE = "intermediate"  # 中级 - 能独立完成任务
-    ADVANCED = "advanced"          # 高级 - 能解决复杂问题
-    EXPERT = "expert"              # 专家 - 深入理解，能指导他人
+    ADVANCED = "advanced"  # 高级 - 能解决复杂问题
+    EXPERT = "expert"  # 专家 - 深入理解，能指导他人
 
 
 class SkillName(str, Enum):
@@ -127,47 +128,47 @@ class ProjectInterest(str, Enum):
     """Project type interests - what kind of projects you want to work on"""
 
     # Application Types
-    WEBAPP = "webapp"                    # Web 应用
-    MOBILE = "mobile"                    # 移动应用
-    DESKTOP = "desktop"                  # 桌面应用
-    CLI = "cli"                          # 命令行工具
-    API = "api"                          # API/后端服务
-    LIBRARY = "library"                  # 库/SDK
+    WEBAPP = "webapp"  # Web 应用
+    MOBILE = "mobile"  # 移动应用
+    DESKTOP = "desktop"  # 桌面应用
+    CLI = "cli"  # 命令行工具
+    API = "api"  # API/后端服务
+    LIBRARY = "library"  # 库/SDK
 
     # Domain-specific
-    LLM = "llm"                          # 大语言模型
-    ML = "ml"                            # 机器学习
-    DATA = "data"                        # 数据处理/分析
-    DEVTOOLS = "devtools"                # 开发者工具
-    GAME = "game"                        # 游戏
-    BLOCKCHAIN = "blockchain"            # 区块链
-    IOT = "iot"                          # 物联网
-    SECURITY = "security"                # 安全工具
-    AUTOMATION = "automation"            # 自动化工具
-    INFRASTRUCTURE = "infrastructure"    # 基础设施
+    LLM = "llm"  # 大语言模型
+    ML = "ml"  # 机器学习
+    DATA = "data"  # 数据处理/分析
+    DEVTOOLS = "devtools"  # 开发者工具
+    GAME = "game"  # 游戏
+    BLOCKCHAIN = "blockchain"  # 区块链
+    IOT = "iot"  # 物联网
+    SECURITY = "security"  # 安全工具
+    AUTOMATION = "automation"  # 自动化工具
+    INFRASTRUCTURE = "infrastructure"  # 基础设施
 
 
 class IssueInterest(str, Enum):
     """Issue type interests - what kind of issues you want to work on"""
 
     # Code Changes
-    BUG_FIX = "bug_fix"                  # Bug 修复
-    FEATURE = "feature"                  # 新功能
-    ENHANCEMENT = "enhancement"          # 功能增强
-    OPTIMIZATION = "optimization"        # 性能优化
-    REFACTOR = "refactor"                # 代码重构
+    BUG_FIX = "bug_fix"  # Bug 修复
+    FEATURE = "feature"  # 新功能
+    ENHANCEMENT = "enhancement"  # 功能增强
+    OPTIMIZATION = "optimization"  # 性能优化
+    REFACTOR = "refactor"  # 代码重构
 
     # Quality
-    TESTING = "testing"                  # 测试相关
-    DOCUMENTATION = "documentation"      # 文档
-    ACCESSIBILITY = "accessibility"      # 可访问性
-    SECURITY = "security"                # 安全修复
-    UI_UX = "ui_ux"                      # UI/UX 改进
+    TESTING = "testing"  # 测试相关
+    DOCUMENTATION = "documentation"  # 文档
+    ACCESSIBILITY = "accessibility"  # 可访问性
+    SECURITY = "security"  # 安全修复
+    UI_UX = "ui_ux"  # UI/UX 改进
 
     # Maintenance
-    DEPENDENCY = "dependency"            # 依赖更新
-    CI_CD = "ci_cd"                      # CI/CD 相关
-    CLEANUP = "cleanup"                  # 代码清理
+    DEPENDENCY = "dependency"  # 依赖更新
+    CI_CD = "ci_cd"  # CI/CD 相关
+    CLEANUP = "cleanup"  # 代码清理
 
 
 class Skill(BaseModel):

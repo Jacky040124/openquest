@@ -1,6 +1,7 @@
 """SQLAlchemy Models Package"""
 
 from .user_preference import (
+    SKILL_CATEGORY_MAP,
     Base,
     Familiarity,
     IssueInterest,
@@ -8,7 +9,6 @@ from .user_preference import (
     Skill,
     SkillCategory,
     SkillName,
-    SKILL_CATEGORY_MAP,
     UserPreference,
 )
 

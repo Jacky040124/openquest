@@ -3,9 +3,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from ..dto.auth_dto import LoginDTO, RegisterDTO, TokenDTO, UserResponseDTO
-from ..dto.user_dto import UserPreferenceCreateDTO, UserPreferenceDTO, UserPreferenceUpdateDTO
 from ..dao.user_preference_dao import UserPreferenceDAO
+from ..dto.auth_dto import LoginDTO, RegisterDTO, TokenDTO, UserResponseDTO
+from ..dto.user_dto import (
+    UserPreferenceCreateDTO,
+    UserPreferenceDTO,
+    UserPreferenceUpdateDTO,
+)
 from ..services.auth_service import AuthService
 from ..utils.dependencies import CurrentUser, SupabaseClient
 
@@ -13,7 +17,9 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 security = HTTPBearer()
 
 
-@router.post("/register", response_model=UserResponseDTO, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=UserResponseDTO, status_code=status.HTTP_201_CREATED
+)
 async def register(data: RegisterDTO, supabase: SupabaseClient) -> UserResponseDTO:
     """Register a new user"""
     try:
@@ -71,13 +77,13 @@ async def get_user_preferences(
 ) -> UserPreferenceDTO:
     """
     Get current user's preferences.
-    
+
     Returns the user's preferences including:
     - Languages they're interested in
     - Skills with familiarity levels
     - Project interests (webapp, mobile, etc.)
     - Issue interests (bug_fix, feature, etc.)
-    
+
     Raises 404 if preferences have not been set yet.
     """
     from uuid import UUID
@@ -108,7 +114,11 @@ async def get_user_preferences(
         )
 
 
-@router.post("/me/preferences", response_model=UserPreferenceDTO, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/me/preferences",
+    response_model=UserPreferenceDTO,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_user_preferences(
     data: UserPreferenceCreateDTO,
     current_user: CurrentUser,
@@ -116,16 +126,16 @@ async def create_user_preferences(
 ) -> UserPreferenceDTO:
     """
     Create user preferences.
-    
+
     Creates a new preference profile for the authenticated user. All fields are optional
     and can be empty lists for initial setup.
-    
+
     **Request body fields (all optional, can be empty):**
     - `languages`: List of programming languages (e.g., ["Python", "JavaScript"])
     - `skills`: List of skills with familiarity levels
     - `project_interests`: List of project types (e.g., ["webapp", "mobile"])
     - `issue_interests`: List of issue types (e.g., ["bug_fix", "feature"])
-    
+
     **Example request:**
     ```json
     {
@@ -146,7 +156,7 @@ async def create_user_preferences(
       "issue_interests": ["bug_fix", "feature"]
     }
     ```
-    
+
     **Note:** If preferences already exist, returns 409 Conflict. Use PUT to update existing preferences.
     """
     from uuid import UUID
@@ -203,23 +213,23 @@ async def update_user_preferences(
 ) -> UserPreferenceDTO:
     """
     Update user preferences (partial update).
-    
+
     Allows updating one or more preference fields. Fields not provided (None) will remain unchanged.
     Empty lists ([]) will clear that field.
-    
+
     **Request body fields (all optional):**
     - `languages`: List of programming languages (e.g., ["Python", "JavaScript"])
     - `skills`: List of skills with familiarity levels
     - `project_interests`: List of project types (e.g., ["webapp", "mobile"])
     - `issue_interests`: List of issue types (e.g., ["bug_fix", "feature"])
-    
+
     **Example - Update only languages:**
     ```json
     {
       "languages": ["Python", "TypeScript"]
     }
     ```
-    
+
     **Example - Clear languages and update skills:**
     ```json
     {
@@ -288,7 +298,9 @@ async def update_user_preferences(
                 user_id=user_id,
                 languages=data.languages if data.languages is not None else [],
                 skills=skills_data if skills_data is not None else [],
-                project_interests=project_interests if project_interests is not None else [],
+                project_interests=project_interests
+                if project_interests is not None
+                else [],
                 issue_interests=issue_interests if issue_interests is not None else [],
             )
 

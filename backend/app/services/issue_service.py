@@ -39,7 +39,9 @@ class IssueService:
 
         return filtered_issues
 
-    async def get_issue_details(self, repo_url: str, issue_number: int) -> IssueDTO | None:
+    async def get_issue_details(
+        self, repo_url: str, issue_number: int
+    ) -> IssueDTO | None:
         """Get details of a specific issue"""
         # This would require a specific API call to get a single issue
         # For now, we can search through issues

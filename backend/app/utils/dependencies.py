@@ -1,6 +1,7 @@
 """FastAPI Dependencies"""
 
-from typing import Annotated, Generator
+from collections.abc import Generator
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -90,7 +91,9 @@ async def get_current_user(
         return {
             "id": user_response.user.id,
             "email": user_response.user.email,
-            "created_at": str(user_response.user.created_at) if user_response.user.created_at else None,
+            "created_at": str(user_response.user.created_at)
+            if user_response.user.created_at
+            else None,
         }
     except Exception as e:
         raise HTTPException(

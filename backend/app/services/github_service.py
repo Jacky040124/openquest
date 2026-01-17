@@ -72,8 +72,11 @@ class GitHubService:
                     url=item["html_url"],
                     labels=[label["name"] for label in item.get("labels", [])],
                     language=None,  # Will be set from repo info if needed
-                    created_at=datetime.fromisoformat(item["created_at"].replace("Z", "+00:00")),
-                    is_assigned=item.get("assignee") is not None or len(item.get("assignees", [])) > 0,
+                    created_at=datetime.fromisoformat(
+                        item["created_at"].replace("Z", "+00:00")
+                    ),
+                    is_assigned=item.get("assignee") is not None
+                    or len(item.get("assignees", [])) > 0,
                     comments_count=item.get("comments", 0),
                 )
             )
@@ -93,7 +96,9 @@ class GitHubService:
             data = response.json()
 
         # Get good first issue count
-        good_first_issue_count = await self._get_label_issue_count(owner, repo, "good first issue")
+        good_first_issue_count = await self._get_label_issue_count(
+            owner, repo, "good first issue"
+        )
 
         return RepoDTO(
             id=data["id"],

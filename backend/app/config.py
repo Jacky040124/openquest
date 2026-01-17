@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     # Redis (optional)
     redis_url: str | None = None
 
+    # OpenRouter LLM
+    openrouter_api_key: str | None = None
+    openrouter_model: str = "anthropic/claude-3.5-haiku"
+
     @property
     def is_production(self) -> bool:
         return not self.debug
