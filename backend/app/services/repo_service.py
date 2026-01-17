@@ -1,21 +1,35 @@
-"""Repository Service - Repo Recommendation Logic"""
+"""Repository Service - LLM-based Repo Recommendation Logic"""
 
+import logging
 from uuid import UUID
 
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from ..dao.user_preference_dao import UserPreferenceDAO
 from ..dto.repo_dto import RepoDTO, RepoRecommendQueryDTO
 from .github_service import GitHubService
+from .openrouter_service import OpenRouterService
+from .prompt_service import PromptService
+
+logger = logging.getLogger(__name__)
 
 
 class RepoService:
-    """Service for repository recommendation based on user preferences"""
+    """Service for repository recommendation based on user preferences using LLM"""
 
-    def __init__(self, github_service: GitHubService, db: Session):
+    def __init__(
+        self,
+        github_service: GitHubService,
+        db: Session,
+        openrouter_service: OpenRouterService | None = None,
+        prompt_service: PromptService | None = None,
+    ):
         self.github_service = github_service
         self.db = db
         self.user_preference_dao = UserPreferenceDAO(db)
+        self.openrouter_service = openrouter_service
+        self.prompt_service = prompt_service or PromptService()
 
     async def recommend_repos(
         self,
@@ -23,7 +37,9 @@ class RepoService:
         query: RepoRecommendQueryDTO | None = None,
     ) -> list[RepoDTO]:
         """
-        Recommend repositories based on user preferences.
+        Recommend repositories based on user preferences using LLM.
+
+        Falls back to GitHub API search if LLM is not available or fails.
 
         Args:
             user_id: The user's ID (from Supabase auth)
@@ -35,28 +51,176 @@ class RepoService:
         # Get user preferences
         user_preference = self.user_preference_dao.get_by_user_id(user_id)
 
-        if not user_preference:
-            # Return default recommendations if no preferences set
-            return await self._get_default_recommendations(query)
-
-        # Extract preferences
-        languages = user_preference.languages or []
-        skills = user_preference.skills or []  # List of dicts with name, category, familiarity
-        project_interests = user_preference.project_interests or []
-
-        # Map skills to topics for GitHub search (prioritize by familiarity)
-        topics = self._skills_to_topics(skills)
-
-        # Add project interests as topics
-        topics.extend(self._project_interests_to_topics(project_interests))
-
         # Get query parameters
         limit = query.limit if query else 10
         min_stars = query.min_stars if query else 100
         max_stars = query.max_stars if query else None
 
+        # Try LLM-based recommendations first
+        if self.openrouter_service:
+            try:
+                repos = await self._get_llm_recommendations(
+                    user_preference=user_preference,
+                    limit=limit,
+                    min_stars=min_stars,
+                    max_stars=max_stars,
+                )
+                if repos:
+                    return repos
+            except Exception as e:
+                logger.warning(
+                    f"LLM recommendation failed, falling back to GitHub API: {e}"
+                )
+
+        # Fallback to GitHub API search
+        return await self._get_github_recommendations(
+            user_preference=user_preference,
+            limit=limit,
+            min_stars=min_stars,
+            max_stars=max_stars,
+        )
+
+    async def _get_llm_recommendations(
+        self,
+        user_preference,
+        limit: int,
+        min_stars: int,
+        max_stars: int | None,
+    ) -> list[RepoDTO]:
+        """
+        Get repository recommendations using LLM.
+
+        Args:
+            user_preference: User's preference model (can be None)
+            limit: Number of recommendations to request
+            min_stars: Minimum star count filter
+            max_stars: Maximum star count filter (optional)
+
+        Returns:
+            List of recommended repositories
+
+        Raises:
+            Exception: If LLM call or parsing fails
+        """
+        # Build prompts
+        system_prompt, user_prompt = self.prompt_service.build_recommendation_prompt(
+            user_preference=user_preference,
+            limit=limit,
+            min_stars=min_stars,
+            max_stars=max_stars,
+        )
+
+        # Get JSON schema for structured output
+        json_schema = self.prompt_service.get_repo_json_schema()
+
+        # Call LLM
+        response = await self.openrouter_service.generate_json(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            json_schema=json_schema,
+            temperature=0.7,
+        )
+
+        # Parse and validate response
+        repos = self._parse_llm_response(response)
+
+        return repos
+
+    def _parse_llm_response(self, response: dict) -> list[RepoDTO]:
+        """
+        Parse and validate LLM response into RepoDTO list.
+
+        Args:
+            response: JSON response from LLM
+
+        Returns:
+            List of validated RepoDTO objects
+
+        Raises:
+            ValueError: If response format is invalid
+        """
+        # Handle both array and object with repositories key
+        if isinstance(response, list):
+            repo_data = response
+        elif isinstance(response, dict):
+            if "repositories" in response:
+                repo_data = response["repositories"]
+            else:
+                # Try to find an array in the response
+                for value in response.values():
+                    if isinstance(value, list):
+                        repo_data = value
+                        break
+                else:
+                    raise ValueError("No repository array found in LLM response")
+        else:
+            raise ValueError(f"Unexpected response type: {type(response)}")
+
+        repos = []
+        for item in repo_data:
+            try:
+                # Validate and create RepoDTO
+                repo = RepoDTO(
+                    id=item.get("id", 0),
+                    name=item.get("name", ""),
+                    full_name=item.get("full_name", ""),
+                    url=item.get("url", ""),
+                    description=item.get("description"),
+                    language=item.get("language", "Unknown"),
+                    stars=item.get("stars", 0),
+                    open_issues_count=item.get("open_issues_count", 0),
+                    topics=item.get("topics", []),
+                    good_first_issue_count=item.get("good_first_issue_count", 0),
+                )
+                repos.append(repo)
+            except ValidationError as e:
+                logger.warning(f"Failed to validate repo from LLM response: {e}")
+                continue
+
+        if not repos:
+            raise ValueError("No valid repositories in LLM response")
+
+        return repos
+
+    async def _get_github_recommendations(
+        self,
+        user_preference,
+        limit: int,
+        min_stars: int,
+        max_stars: int | None,
+    ) -> list[RepoDTO]:
+        """
+        Get repository recommendations using GitHub API (fallback).
+
+        Args:
+            user_preference: User's preference model (can be None)
+            limit: Number of recommendations to request
+            min_stars: Minimum star count filter
+            max_stars: Maximum star count filter (optional)
+
+        Returns:
+            List of recommended repositories
+        """
+        if not user_preference:
+            return await self.github_service.search_repos(
+                min_stars=min_stars,
+                has_good_first_issues=True,
+                limit=limit,
+            )
+
+        # Extract preferences
+        languages = user_preference.languages or []
+        skills = user_preference.skills or []
+        project_interests = user_preference.project_interests or []
+
+        # Map skills to topics for GitHub search
+        topics = self._skills_to_topics(skills)
+
+        # Add project interests as topics
+        topics.extend(self._project_interests_to_topics(project_interests))
+
         # Search for repositories
-        repos = await self.github_service.search_repos(
+        return await self.github_service.search_repos(
             languages=languages if languages else None,
             topics=topics if topics else None,
             min_stars=min_stars,
@@ -65,26 +229,11 @@ class RepoService:
             limit=limit,
         )
 
-        return repos
-
-    async def _get_default_recommendations(
-        self, query: RepoRecommendQueryDTO | None = None
-    ) -> list[RepoDTO]:
-        """Get default recommendations for users without preferences"""
-        limit = query.limit if query else 10
-        min_stars = query.min_stars if query else 100
-
-        return await self.github_service.search_repos(
-            min_stars=min_stars,
-            has_good_first_issues=True,
-            limit=limit,
-        )
-
     def _skills_to_topics(self, skills: list[dict]) -> list[str]:
         """
         Map skills to GitHub topics.
 
-        Skills are now structured objects with name, category, and familiarity.
+        Skills are structured objects with name, category, and familiarity.
         We prioritize skills with higher familiarity levels.
         """
         skill_topic_map = {
@@ -118,7 +267,12 @@ class RepoService:
         }
 
         # Sort skills by familiarity level (expert > advanced > intermediate > beginner)
-        familiarity_order = {"expert": 0, "advanced": 1, "intermediate": 2, "beginner": 3}
+        familiarity_order = {
+            "expert": 0,
+            "advanced": 1,
+            "intermediate": 2,
+            "beginner": 3,
+        }
         sorted_skills = sorted(
             skills,
             key=lambda s: familiarity_order.get(s.get("familiarity", "beginner"), 4),

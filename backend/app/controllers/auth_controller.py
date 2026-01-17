@@ -3,9 +3,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from ..dto.auth_dto import LoginDTO, RegisterDTO, TokenDTO, UserResponseDTO
-from ..dto.user_dto import UserPreferenceCreateDTO, UserPreferenceDTO, UserPreferenceUpdateDTO
 from ..dao.user_preference_dao import UserPreferenceDAO
+from ..dto.auth_dto import LoginDTO, RegisterDTO, TokenDTO, UserResponseDTO
+from ..dto.user_dto import (
+    UserPreferenceCreateDTO,
+    UserPreferenceDTO,
+    UserPreferenceUpdateDTO,
+)
 from ..services.auth_service import AuthService
 from ..utils.dependencies import CurrentUser, DBSession, SupabaseClient
 
@@ -13,7 +17,9 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 security = HTTPBearer()
 
 
-@router.post("/register", response_model=UserResponseDTO, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=UserResponseDTO, status_code=status.HTTP_201_CREATED
+)
 async def register(data: RegisterDTO, supabase: SupabaseClient) -> UserResponseDTO:
     """Register a new user"""
     try:
@@ -65,7 +71,9 @@ async def get_current_user_info(current_user: CurrentUser) -> UserResponseDTO:
 
 # User Preferences endpoints (under /auth for user context)
 @router.get("/me/preferences", response_model=UserPreferenceDTO | None)
-async def get_user_preferences(current_user: CurrentUser, db: DBSession) -> UserPreferenceDTO | None:
+async def get_user_preferences(
+    current_user: CurrentUser, db: DBSession
+) -> UserPreferenceDTO | None:
     """Get current user's preferences"""
     from uuid import UUID
 
@@ -78,7 +86,11 @@ async def get_user_preferences(current_user: CurrentUser, db: DBSession) -> User
     return None
 
 
-@router.post("/me/preferences", response_model=UserPreferenceDTO, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/me/preferences",
+    response_model=UserPreferenceDTO,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_user_preferences(
     data: UserPreferenceCreateDTO,
     current_user: CurrentUser,

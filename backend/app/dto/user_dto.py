@@ -6,13 +6,13 @@ from uuid import UUID
 from pydantic import BaseModel, field_validator
 
 from ..models.user_preference import (
+    SKILL_CATEGORY_MAP,
     Familiarity,
     IssueInterest,
     ProjectInterest,
     Skill,
     SkillCategory,
     SkillName,
-    SKILL_CATEGORY_MAP,
 )
 
 
@@ -33,7 +33,9 @@ class SkillInputDTO(BaseModel):
 
     def to_skill(self) -> Skill:
         """Convert to Skill model"""
-        category = self.category or SKILL_CATEGORY_MAP.get(self.name, SkillCategory.OTHER)
+        category = self.category or SKILL_CATEGORY_MAP.get(
+            self.name, SkillCategory.OTHER
+        )
         return Skill(name=self.name, category=category, familiarity=self.familiarity)
 
 

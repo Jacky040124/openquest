@@ -26,7 +26,9 @@ class AuthService:
         return UserResponseDTO(
             id=str(response.user.id),
             email=response.user.email or "",
-            created_at=str(response.user.created_at) if response.user.created_at else None,
+            created_at=str(response.user.created_at)
+            if response.user.created_at
+            else None,
         )
 
     def login(self, data: LoginDTO) -> TokenDTO:
@@ -63,7 +65,9 @@ class AuthService:
                 return UserResponseDTO(
                     id=str(response.user.id),
                     email=response.user.email or "",
-                    created_at=str(response.user.created_at) if response.user.created_at else None,
+                    created_at=str(response.user.created_at)
+                    if response.user.created_at
+                    else None,
                 )
             return None
         except Exception:
