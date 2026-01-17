@@ -47,17 +47,39 @@ class GitHubService:
             "state": state,
             "per_page": per_page,
         }
+        # GitHub API: multiple labels use AND logic (all must match)
+        # If you want OR logic, we need to fetch all issues and filter client-side
         if labels:
+            # Join labels with comma (GitHub expects comma-separated)
             params["labels"] = ",".join(labels)
 
         async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self.BASE_URL}/repos/{owner}/{repo}/issues",
-                headers=self.headers,
-                params=params,
-            )
-            response.raise_for_status()
-            data = response.json()
+            try:
+                # Fetch repository info first to get language (language is repo-level, not issue-level)
+                repo_response = await client.get(
+                    f"{self.BASE_URL}/repos/{owner}/{repo}",
+                    headers=self.headers,
+                    timeout=30.0,
+                )
+                repo_response.raise_for_status()
+                repo_data = repo_response.json()
+                repo_language = repo_data.get("language")
+                
+                # Fetch issues
+                response = await client.get(
+                    f"{self.BASE_URL}/repos/{owner}/{repo}/issues",
+                    headers=self.headers,
+                    params=params,
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+                data = response.json()
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    raise ValueError(f"Repository not found: {owner}/{repo}")
+                raise ValueError(f"GitHub API error: {e.response.status_code} - {e.response.text}")
+            except Exception as e:
+                raise ValueError(f"Failed to fetch issues: {str(e)}")
 
         issues = []
         for item in data:
@@ -71,7 +93,7 @@ class GitHubService:
                     title=item["title"],
                     url=item["html_url"],
                     labels=[label["name"] for label in item.get("labels", [])],
-                    language=None,  # Will be set from repo info if needed
+                    language=repo_language,  # Use repository language (from repo API call)
                     created_at=datetime.fromisoformat(
                         item["created_at"].replace("Z", "+00:00")
                     ),
