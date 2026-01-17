@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # Supabase
-    supabase_url: str
-    supabase_key: str
+    supabase_url: str | None = None
+    supabase_key: str | None = None
     supabase_jwt_secret: str | None = None
 
     # Database
