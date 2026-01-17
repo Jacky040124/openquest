@@ -7,24 +7,24 @@ It's like LeetCode, but for real repositories and real pull requests.
 
 ## How It Works
 
-1. **Profile & Skill Assessment**
+1. **Profile & Skill Assessment**:
    Users describe their experience, tech stack, and interests.
 
-2. **Repo Matching**
+2. **Repo Matching**:
    An AI agent recommends beginner-friendly open-source GitHub repositories.
 
-3. **Issue Ranking**
+3. **Issue Ranking**:
    Selected repos are analyzed and issues are ranked by:
    - Difficulty
    - Required technologies
    - Estimated effort
    - User preferences
 
-4. **Guided Contribution**
+4. **Guided Contribution**:
    - A Planner Agent creates a step-by-step contribution plan
    - A Coding Agent can assist with implementation when requested
 
-5. **Progression & Rewards**
+5. **Progression & Rewards**:
    - Submit a pull request → level up
    - Unlock harder repositories
    - Earn nameplates, badges, and prizes
