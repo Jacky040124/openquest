@@ -1,11 +1,17 @@
 import { create } from 'zustand';
+import type { SkillName, Familiarity, ProjectInterest, IssueInterest, SkillInputDTO } from '@/types/api';
+
+// Skill with familiarity for UI state
+export interface SkillWithFamiliarity {
+  name: SkillName;
+  familiarity: Familiarity;
+}
 
 export interface Preferences {
-  experienceLevel: string | null;
   languages: string[];
-  frameworks: string[];
-  issueTypes: string[];
-  projectTypes: string[];
+  skills: SkillWithFamiliarity[];
+  issue_interests: IssueInterest[];
+  project_interests: ProjectInterest[];
 }
 
 interface PreferencesState {
@@ -14,37 +20,36 @@ interface PreferencesState {
   setStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
-  setExperienceLevel: (level: string) => void;
   toggleLanguage: (lang: string) => void;
-  toggleFramework: (framework: string) => void;
-  toggleIssueType: (type: string) => void;
-  toggleProjectType: (type: string) => void;
+  addSkill: (skill: SkillWithFamiliarity) => void;
+  removeSkill: (skillName: SkillName) => void;
+  updateSkillFamiliarity: (skillName: SkillName, familiarity: Familiarity) => void;
+  toggleIssueInterest: (interest: IssueInterest) => void;
+  toggleProjectInterest: (interest: ProjectInterest) => void;
   resetPreferences: () => void;
+  getSkillsForApi: () => SkillInputDTO[];
 }
 
 const initialPreferences: Preferences = {
-  experienceLevel: null,
   languages: [],
-  frameworks: [],
-  issueTypes: [],
-  projectTypes: [],
+  skills: [],
+  issue_interests: [],
+  project_interests: [],
 };
 
-export const usePreferencesStore = create<PreferencesState>((set) => ({
+// Total steps after removing ExperienceStep: Welcome(0), Languages(1), Skills(2), IssueTypes(3), ProjectTypes(4), Summary(5), CreateAccount(6)
+const TOTAL_STEPS = 6;
+
+export const usePreferencesStore = create<PreferencesState>((set, get) => ({
   currentStep: 0,
   preferences: initialPreferences,
-  
+
   setStep: (step) => set({ currentStep: step }),
-  
-  nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 7) })),
-  
+
+  nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, TOTAL_STEPS) })),
+
   prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 0) })),
-  
-  setExperienceLevel: (level) =>
-    set((state) => ({
-      preferences: { ...state.preferences, experienceLevel: level },
-    })),
-  
+
   toggleLanguage: (lang) =>
     set((state) => ({
       preferences: {
@@ -54,36 +59,63 @@ export const usePreferencesStore = create<PreferencesState>((set) => ({
           : [...state.preferences.languages, lang],
       },
     })),
-  
-  toggleFramework: (framework) =>
+
+  addSkill: (skill) =>
+    set((state) => {
+      const exists = state.preferences.skills.find((s) => s.name === skill.name);
+      if (exists) return state;
+      return {
+        preferences: {
+          ...state.preferences,
+          skills: [...state.preferences.skills, skill],
+        },
+      };
+    }),
+
+  removeSkill: (skillName) =>
     set((state) => ({
       preferences: {
         ...state.preferences,
-        frameworks: state.preferences.frameworks.includes(framework)
-          ? state.preferences.frameworks.filter((f) => f !== framework)
-          : [...state.preferences.frameworks, framework],
+        skills: state.preferences.skills.filter((s) => s.name !== skillName),
       },
     })),
-  
-  toggleIssueType: (type) =>
+
+  updateSkillFamiliarity: (skillName, familiarity) =>
     set((state) => ({
       preferences: {
         ...state.preferences,
-        issueTypes: state.preferences.issueTypes.includes(type)
-          ? state.preferences.issueTypes.filter((t) => t !== type)
-          : [...state.preferences.issueTypes, type],
+        skills: state.preferences.skills.map((s) =>
+          s.name === skillName ? { ...s, familiarity } : s
+        ),
       },
     })),
-  
-  toggleProjectType: (type) =>
+
+  toggleIssueInterest: (interest) =>
     set((state) => ({
       preferences: {
         ...state.preferences,
-        projectTypes: state.preferences.projectTypes.includes(type)
-          ? state.preferences.projectTypes.filter((t) => t !== type)
-          : [...state.preferences.projectTypes, type],
+        issue_interests: state.preferences.issue_interests.includes(interest)
+          ? state.preferences.issue_interests.filter((i) => i !== interest)
+          : [...state.preferences.issue_interests, interest],
       },
     })),
-  
+
+  toggleProjectInterest: (interest) =>
+    set((state) => ({
+      preferences: {
+        ...state.preferences,
+        project_interests: state.preferences.project_interests.includes(interest)
+          ? state.preferences.project_interests.filter((i) => i !== interest)
+          : [...state.preferences.project_interests, interest],
+      },
+    })),
+
   resetPreferences: () => set({ currentStep: 0, preferences: initialPreferences }),
+
+  getSkillsForApi: () => {
+    return get().preferences.skills.map((skill) => ({
+      name: skill.name,
+      familiarity: skill.familiarity,
+    }));
+  },
 }));

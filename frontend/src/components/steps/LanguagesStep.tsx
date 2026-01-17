@@ -4,6 +4,7 @@ import { usePreferencesStore } from '@/store/preferencesStore';
 import SelectionChip from '@/components/SelectionChip';
 import { Plus } from 'lucide-react';
 
+// Common languages that map well to GitHub's language detection
 const languages = [
   { id: 'JavaScript', label: 'JavaScript' },
   { id: 'TypeScript', label: 'TypeScript' },
