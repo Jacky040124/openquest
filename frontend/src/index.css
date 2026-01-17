@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 220 25% 10%;
+    --foreground: 210 40% 98%;
+
+    --card: 220 25% 14%;
+    --card-foreground: 210 40% 98%;
+    --card-hover: 220 25% 18%;
+
+    --popover: 220 25% 14%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 220 70% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 220 80% 65%;
+
+    --secondary: 45 95% 55%;
+    --secondary-foreground: 220 40% 10%;
+
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 15% 55%;
+
+    --accent: 45 95% 55%;
+    --accent-foreground: 220 40% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 22%;
+    --input: 220 20% 18%;
+    --ring: 220 70% 55%;
+
+    --radius: 0.75rem;
+
+    --gradient-primary: linear-gradient(135deg, hsl(220, 70%, 55%), hsl(220, 80%, 65%));
+    --gradient-accent: linear-gradient(135deg, hsl(45, 95%, 55%), hsl(40, 95%, 50%));
+    --gradient-surface: linear-gradient(180deg, hsl(220, 25%, 14%), hsl(220, 25%, 10%));
+    
+    --shadow-glow: 0 0 40px -10px hsl(220 70% 55% / 0.4);
+    --shadow-card: 0 4px 20px -5px hsl(0 0% 0% / 0.4);
+    --shadow-elevated: 0 10px 40px -10px hsl(0 0% 0% / 0.5);
+
+    --sidebar-background: 220 25% 10%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 220 70% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 45 95% 55%;
+    --sidebar-accent-foreground: 220 40% 10%;
+    --sidebar-border: 220 20% 22%;
+    --sidebar-ring: 220 70% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
+  .glow-primary {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .card-interactive {
+    @apply bg-card border border-border rounded-xl transition-all duration-300 shadow-sm;
+  }
+
+  .card-interactive:hover {
+    @apply border-primary/50 bg-card-hover;
+    box-shadow: 0 0 30px -10px hsl(220 70% 55% / 0.3);
+  }
+
+  .card-selected {
+    @apply border-primary bg-primary/10;
+    box-shadow: 0 0 30px -10px hsl(220 70% 55% / 0.4);
+  }
+
+  .selection-chip {
+    @apply px-4 py-2 rounded-lg border border-border bg-card 
+           text-sm font-medium transition-all duration-200 cursor-pointer
+           hover:border-primary/50 hover:bg-primary/10;
+  }
+
+  .selection-chip-active {
+    @apply border-primary bg-primary/20 text-primary;
+  }
+
+  .step-indicator {
+    @apply w-2.5 h-2.5 rounded-full bg-muted transition-all duration-300;
+  }
+
+  .step-indicator-active {
+    @apply w-8 bg-primary;
+  }
+
+  .step-indicator-complete {
+    @apply bg-primary/60;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 rounded-lg font-semibold transition-all duration-300
+           bg-primary text-primary-foreground hover:opacity-90;
+    box-shadow: 0 0 20px -5px hsl(220 70% 55% / 0.5);
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 0 30px -5px hsl(220 70% 55% / 0.6);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200
+           bg-secondary text-secondary-foreground border border-secondary
+           hover:bg-secondary/80;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-lg bg-input border border-border
+           text-foreground placeholder:text-muted-foreground
+           focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50
+           transition-all duration-200;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% {
+      box-shadow: 0 0 20px -5px hsl(220 70% 55% / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 40px -5px hsl(220 70% 55% / 0.6);
+    }
+  }
+}
