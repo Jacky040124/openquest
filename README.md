@@ -1,57 +1,57 @@
 # OpenQuest
 
-一个现代化的全栈开源项目，提供问答和知识探索平台。
+A modern full-stack open source project providing a Q&A and knowledge exploration platform.
 
-## 技术栈
+## Tech Stack
 
-### 前端
-- **Next.js 14** - React 全栈框架，支持 App Router
-- **React 18** - 用户界面库
-- **TypeScript** - 类型安全的 JavaScript
-- **Tailwind CSS** - 实用优先的 CSS 框架
-- **Zustand** - 轻量级状态管理
-- **TanStack Query** - 服务端状态管理和数据获取
+### Frontend
+- **Next.js 14** - React full-stack framework with App Router
+- **React 18** - UI library
+- **TypeScript** - Type-safe JavaScript
+- **Tailwind CSS** - Utility-first CSS framework
+- **Zustand** - Lightweight state management
+- **TanStack Query** - Server state management and data fetching
 
-### 后端
-- **FastAPI** - 高性能 Python Web 框架
+### Backend
+- **FastAPI** - High-performance Python web framework
 - **SQLAlchemy** - Python ORM
-- **Pydantic** - 数据验证
-- **Uvicorn** - ASGI 服务器
+- **Pydantic** - Data validation
+- **Uvicorn** - ASGI server
 
-### 数据库 & 缓存
-- **PostgreSQL** - 主数据库
-- **Redis** - 缓存和会话存储
+### Database & Cache
+- **PostgreSQL** - Primary database
+- **Redis** - Caching and session storage
 
-### 认证
-- **python-jose** - JWT 令牌处理
+### Authentication
+- **python-jose** - JWT token handling
 
-## 项目结构
+## Project Structure
 
 ```
 open-source/
-├── frontend/          # Next.js 前端应用
-│   ├── app/          # App Router 页面
-│   ├── components/   # React 组件
-│   ├── lib/          # 工具函数
-│   └── package.json  # 前端依赖
-├── backend/          # FastAPI 后端服务
-│   ├── app/          # 应用代码
-│   │   ├── api/      # API 路由
-│   │   ├── models/   # 数据模型
-│   │   └── services/ # 业务逻辑
-│   └── pyproject.toml # 后端依赖
+├── frontend/          # Next.js frontend application
+│   ├── app/          # App Router pages
+│   ├── components/   # React components
+│   ├── lib/          # Utility functions
+│   └── package.json  # Frontend dependencies
+├── backend/          # FastAPI backend service
+│   ├── app/          # Application code
+│   │   ├── api/      # API routes
+│   │   ├── models/   # Data models
+│   │   └── services/ # Business logic
+│   └── pyproject.toml # Backend dependencies
 └── README.md
 ```
 
-## 快速启动
+## Quick Start
 
-### 前提条件
+### Prerequisites
 - Node.js 18+
 - Python 3.11+
 - PostgreSQL 15+
 - Redis 7+
 
-### 前端启动
+### Frontend Setup
 
 ```bash
 cd frontend
@@ -59,9 +59,9 @@ npm install
 npm run dev
 ```
 
-前端将在 http://localhost:3000 启动。
+Frontend will be available at http://localhost:3000.
 
-### 后端启动
+### Backend Setup
 
 ```bash
 cd backend
@@ -69,18 +69,18 @@ uv sync
 uv run uvicorn app.main:app --reload
 ```
 
-后端 API 将在 http://localhost:8000 启动。
+Backend API will be available at http://localhost:8000.
 
-## 开发
+## Development
 
-### 环境变量
+### Environment Variables
 
-前端 (frontend/.env.local):
+Frontend (frontend/.env.local):
 ```
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-后端 (backend/.env):
+Backend (backend/.env):
 ```
 DATABASE_URL=postgresql://user:password@localhost:5432/openquest
 REDIS_URL=redis://localhost:6379
