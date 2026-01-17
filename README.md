@@ -1,6 +1,33 @@
 # OpenQuest
 
-A modern full-stack open source project providing a Q&A and knowledge exploration platform.
+OpenQuest is a gamified platform that helps developers contribute to open-source projects
+based on their skill level, interests, and goals.
+
+It's like LeetCode, but for real repositories and real pull requests.
+
+## How It Works
+
+1. **Profile & Skill Assessment**
+   Users describe their experience, tech stack, and interests.
+
+2. **Repo Matching**
+   An AI agent recommends beginner-friendly open-source GitHub repositories.
+
+3. **Issue Ranking**
+   Selected repos are analyzed and issues are ranked by:
+   - Difficulty
+   - Required technologies
+   - Estimated effort
+   - User preferences
+
+4. **Guided Contribution**
+   - A Planner Agent creates a step-by-step contribution plan
+   - A Coding Agent can assist with implementation when requested
+
+5. **Progression & Rewards**
+   - Submit a pull request → level up
+   - Unlock harder repositories
+   - Earn nameplates, badges, and prizes
 
 ## Tech Stack
 
