@@ -44,9 +44,15 @@ def get_db() -> Generator[Session, None, None]:
     """Get database session dependency"""
     SessionLocal = _get_session_local()
     if SessionLocal is None:
+        settings = get_settings()
+        error_msg = (
+            "Database not configured. Please set DATABASE_URL in your .env file.\n"
+            f"Current database_url setting: {settings.database_url or 'Not set'}\n"
+            "Example: DATABASE_URL=postgresql://user:password@localhost:5432/openquest"
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database not configured",
+            detail=error_msg,
         )
     db = SessionLocal()
     try:
@@ -57,7 +63,13 @@ def get_db() -> Generator[Session, None, None]:
 
 def get_supabase() -> Client:
     """Get Supabase client dependency"""
-    return get_supabase_client()
+    try:
+        return get_supabase_client()
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(e),
+        )
 
 
 async def get_current_user(
