@@ -138,7 +138,7 @@ const Landing = () => {
       {/* Footer */}
       <footer className="relative z-10 p-6 text-center">
         <p className="text-muted-foreground text-sm">
-          Built with ❤️ for the open source community
+          Built with love for the open source community
         </p>
       </footer>
     </div>
