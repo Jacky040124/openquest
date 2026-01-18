@@ -28,6 +28,9 @@ class Settings(BaseSettings):
 
     # GitHub
     github_token: str | None = None
+    github_client_id: str | None = None
+    github_client_secret: str | None = None
+    github_redirect_uri: str | None = None
 
     # Redis (optional)
     redis_url: str | None = None
@@ -35,6 +38,13 @@ class Settings(BaseSettings):
     # OpenRouter LLM
     openrouter_api_key: str | None = None
     openrouter_model: str = "anthropic/claude-3.5-haiku"
+
+    # E2B
+    e2b_api_key: str | None = None
+
+    # Agent Configuration
+    agent_max_turns: int = 25
+    agent_max_tokens_per_tool: int = 8000
 
     @property
     def is_production(self) -> bool:
