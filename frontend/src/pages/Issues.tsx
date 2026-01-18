@@ -31,15 +31,15 @@ const Issues = () => {
     ? repoName.split('/')
     : ['', repoName];
 
-  // Fetch issues
+  // Fetch issues - loose filtering for demo (show more issues)
   const { data: issues, isLoading, error } = useQuery<IssueDTO[]>({
     queryKey: ['issues', repoUrl],
     queryFn: async () => {
       const filter: IssueFilterDTO = {
         repo_url: repoUrl,
-        tags: ['good first issue'], // Match the count which only counts "good first issue"
-        exclude_assigned: true, // Match the count which excludes assigned issues
-        limit: 20,
+        tags: [], // No tag filter - show all open issues
+        exclude_assigned: false, // Show all issues including assigned ones
+        limit: 50, // Show more issues for demo
       };
       return api.post<IssueDTO[]>('/issues/search', filter);
     },
