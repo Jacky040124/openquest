@@ -9,18 +9,18 @@ interface LeaderboardUser {
   xp: number;
 }
 
-// Mock leaderboard data
+// Mock leaderboard data - featuring open source legends
 const mockLeaderboard: LeaderboardUser[] = [
-  { rank: 1, username: 'quantumdev', level: 52, xp: 128450 },
-  { rank: 2, username: 'ciphermaster', level: 50, xp: 115200 },
-  { rank: 3, username: 'starforge', level: 47, xp: 98700 },
-  { rank: 4, username: 'bytecrusher', level: 43, xp: 82100 },
-  { rank: 5, username: 'codeweaver', level: 38, xp: 64500 },
-  { rank: 6, username: 'syntaxlord', level: 33, xp: 48800 },
-  { rank: 7, username: 'devninja', level: 28, xp: 35200 },
-  { rank: 8, username: 'gitguru', level: 22, xp: 24500 },
-  { rank: 9, username: 'pullrequest', level: 17, xp: 16800 },
-  { rank: 10, username: 'commitking', level: 12, xp: 10200 },
+  { rank: 1, username: 'torvalds', level: 52, xp: 128450 },      // Linus Torvalds - Linux & Git
+  { rank: 2, username: 'gvanrossum', level: 50, xp: 115200 },    // Guido van Rossum - Python
+  { rank: 3, username: 'antirez', level: 47, xp: 98700 },        // Salvatore Sanfilippo - Redis
+  { rank: 4, username: 'dhh', level: 43, xp: 82100 },            // David Heinemeier Hansson - Rails
+  { rank: 5, username: 'sindresorhus', level: 38, xp: 64500 },   // Sindre Sorhus - prolific OSS
+  { rank: 6, username: 'tj', level: 33, xp: 48800 },             // TJ Holowaychuk - Express.js
+  { rank: 7, username: 'mrdoob', level: 28, xp: 35200 },         // Ricardo Cabello - Three.js
+  { rank: 8, username: 'fabpot', level: 22, xp: 24500 },         // Fabien Potencier - Symfony
+  { rank: 9, username: 'evanw', level: 17, xp: 16800 },          // Evan Wallace - esbuild
+  { rank: 10, username: 'taylorotwell', level: 12, xp: 10200 },  // Taylor Otwell - Laravel
 ];
 
 const getRankIcon = (rank: number) => {
@@ -45,14 +45,14 @@ const LeaderboardDialog = ({ open, onOpenChange }: LeaderboardDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+        <DialogHeader className="border-b-0 pb-0">
           <DialogTitle className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-400" />
             Top Contributors
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-2 max-h-[400px] overflow-y-auto">
+
+        <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
           {mockLeaderboard.map((user) => {
             const badge = getCurrentBadge(user.level);
             return (
@@ -66,7 +66,7 @@ const LeaderboardDialog = ({ open, onOpenChange }: LeaderboardDialogProps) => {
                 <div className="w-8 flex items-center justify-center">
                   {getRankIcon(user.rank)}
                 </div>
-                
+
                 {/* Badge Image */}
                 <div className={`w-10 h-10 flex items-center justify-center flex-shrink-0 ${
                   badge.name === 'Oracle' ? 'relative' : ''
@@ -74,15 +74,15 @@ const LeaderboardDialog = ({ open, onOpenChange }: LeaderboardDialogProps) => {
                   {badge.name === 'Oracle' && (
                     <div className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-300/40 via-purple-300/40 to-cyan-300/40 blur-md animate-pulse" />
                   )}
-                  <img 
-                    src={badge.image} 
+                  <img
+                    src={badge.image}
                     alt={`${badge.name} badge`}
                     className={`w-10 h-10 object-contain relative z-10 ${
                       badge.name === 'Oracle' ? 'drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]' : ''
                     }`}
                   />
                 </div>
-                
+
                 {/* User Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ const LeaderboardDialog = ({ open, onOpenChange }: LeaderboardDialogProps) => {
                     Level {user.level}
                   </div>
                 </div>
-                
+
                 {/* XP */}
                 <div className="text-right">
                   <div className="text-sm font-semibold text-primary">{user.xp.toLocaleString()}</div>

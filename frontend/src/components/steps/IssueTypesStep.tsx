@@ -1,97 +1,32 @@
 import { motion } from 'framer-motion';
 import { usePreferencesStore } from '@/store/preferencesStore';
-import SelectionCard from '@/components/SelectionCard';
-import {
-  Bug, Sparkles, FileText, Wrench, Shield, Zap,
-  TestTube, Accessibility, Package, GitBranch, Trash2, Palette
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import type { IssueInterest } from '@/types/api';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ISSUE TYPES STEP - E2B INDUSTRIAL AESTHETIC
+// Terminal windows, ASCII art, orange accents, monospace typography
+// ═══════════════════════════════════════════════════════════════════════════════
 
 // Issue interests matching backend IssueInterest enum
 const issueInterests: {
   id: IssueInterest;
   title: string;
-  description: string;
-  icon: React.ReactNode;
+  icon: string;
 }[] = [
-  {
-    id: 'bug_fix',
-    title: 'Bug Fixes',
-    description: 'Fix existing issues and improve stability',
-    icon: <Bug className="w-6 h-6" />,
-  },
-  {
-    id: 'feature',
-    title: 'New Features',
-    description: 'Build new functionality from scratch',
-    icon: <Sparkles className="w-6 h-6" />,
-  },
-  {
-    id: 'enhancement',
-    title: 'Enhancements',
-    description: 'Improve existing features and capabilities',
-    icon: <Zap className="w-6 h-6" />,
-  },
-  {
-    id: 'documentation',
-    title: 'Documentation',
-    description: 'Improve docs, tutorials, and examples',
-    icon: <FileText className="w-6 h-6" />,
-  },
-  {
-    id: 'refactor',
-    title: 'Refactoring',
-    description: 'Improve code quality and maintainability',
-    icon: <Wrench className="w-6 h-6" />,
-  },
-  {
-    id: 'testing',
-    title: 'Testing',
-    description: 'Add or improve test coverage',
-    icon: <TestTube className="w-6 h-6" />,
-  },
-  {
-    id: 'security',
-    title: 'Security',
-    description: 'Fix vulnerabilities and improve security',
-    icon: <Shield className="w-6 h-6" />,
-  },
-  {
-    id: 'optimization',
-    title: 'Optimization',
-    description: 'Improve performance and efficiency',
-    icon: <Zap className="w-6 h-6" />,
-  },
-  {
-    id: 'accessibility',
-    title: 'Accessibility',
-    description: 'Make apps more accessible to everyone',
-    icon: <Accessibility className="w-6 h-6" />,
-  },
-  {
-    id: 'ui_ux',
-    title: 'UI/UX',
-    description: 'Improve user interface and experience',
-    icon: <Palette className="w-6 h-6" />,
-  },
-  {
-    id: 'dependency',
-    title: 'Dependencies',
-    description: 'Update and manage dependencies',
-    icon: <Package className="w-6 h-6" />,
-  },
-  {
-    id: 'ci_cd',
-    title: 'CI/CD',
-    description: 'Improve build and deployment pipelines',
-    icon: <GitBranch className="w-6 h-6" />,
-  },
-  {
-    id: 'cleanup',
-    title: 'Cleanup',
-    description: 'Remove dead code and technical debt',
-    icon: <Trash2 className="w-6 h-6" />,
-  },
+  { id: 'bug_fix', title: 'BUG FIXES', icon: '◆' },
+  { id: 'feature', title: 'NEW FEATURES', icon: '◇' },
+  { id: 'enhancement', title: 'ENHANCEMENTS', icon: '⚡' },
+  { id: 'documentation', title: 'DOCUMENTATION', icon: '◈' },
+  { id: 'refactor', title: 'REFACTORING', icon: '⟲' },
+  { id: 'testing', title: 'TESTING', icon: '✓' },
+  { id: 'security', title: 'SECURITY', icon: '⛨' },
+  { id: 'optimization', title: 'OPTIMIZATION', icon: '▲' },
+  { id: 'accessibility', title: 'ACCESSIBILITY', icon: '⊙' },
+  { id: 'ui_ux', title: 'UI/UX', icon: '◎' },
+  { id: 'dependency', title: 'DEPENDENCIES', icon: '⧉' },
+  { id: 'ci_cd', title: 'CI/CD', icon: '⟳' },
+  { id: 'cleanup', title: 'CLEANUP', icon: '✕' },
 ];
 
 const IssueTypesStep = () => {
@@ -105,48 +40,133 @@ const IssueTypesStep = () => {
       exit={{ opacity: 0, x: -50 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-3">What type of issues interest you?</h2>
-        <p className="text-muted-foreground">
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* HEADER */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      <div className="text-center mb-10">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="inline-flex items-center gap-3 mb-6"
+        >
+          <span className="text-white/20 tracking-[0.3em] text-xs">━━━</span>
+          <span className="text-[11px] text-[#FF6B00] tracking-[0.3em] uppercase">SELECT ISSUE TYPES</span>
+          <span className="text-white/20 tracking-[0.3em] text-xs">━━━</span>
+        </motion.div>
+
+        <motion.h2
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-2xl md:text-3xl font-bold tracking-tight mb-3"
+          style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Monaco, monospace" }}
+        >
+          WHAT <span className="text-[#FF6B00]">ISSUES</span> INTEREST YOU?
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-white/50 text-sm"
+        >
           Select all types of contributions you'd like to make
-        </p>
+        </motion.p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {issueInterests.map((type, index) => (
-          <motion.div
-            key={type.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-          >
-            <SelectionCard
-              title={type.title}
-              description={type.description}
-              icon={type.icon}
-              selected={preferences.issue_interests.includes(type.id)}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* ISSUE TYPES GRID */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      <motion.div
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-8"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          visible: {
+            transition: {
+              staggerChildren: 0.03,
+            },
+          },
+        }}
+      >
+        {issueInterests.map((type) => {
+          const isSelected = preferences.issue_interests.includes(type.id);
+          return (
+            <motion.button
+              key={type.id}
               onClick={() => toggleIssueInterest(type.id)}
-            />
-          </motion.div>
-        ))}
-      </div>
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                visible: { opacity: 1, y: 0 },
+              }}
+              className={`
+                relative p-4 border font-mono text-xs transition-all duration-200 text-left
+                ${isSelected
+                  ? 'border-[#FF6B00] bg-[#FF6B00]/10'
+                  : 'border-white/10 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.04]'
+                }
+              `}
+            >
+              {/* Icon */}
+              <div className={`text-lg mb-2 ${isSelected ? 'text-[#FF6B00]' : 'text-white/40'}`}>
+                {type.icon}
+              </div>
 
-      <div className="text-center mt-6 text-sm text-muted-foreground">
-        {preferences.issue_interests.length} type{preferences.issue_interests.length !== 1 ? 's' : ''} selected
-      </div>
+              {/* Title */}
+              <div className={`tracking-wider text-[10px] ${isSelected ? 'text-[#FF6B00]' : 'text-white/60'}`}>
+                {type.title}
+              </div>
 
-      <div className="flex justify-between mt-8">
-        <button onClick={prevStep} className="btn-secondary">
-          Back
+              {/* Selection indicator */}
+              {isSelected && (
+                <span className="absolute top-2 right-2 text-[8px] text-[#FF6B00]">✓</span>
+              )}
+            </motion.button>
+          );
+        })}
+      </motion.div>
+
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* COUNTER */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="text-center mb-8"
+      >
+        <span className="font-mono text-lg text-[#FF6B00] tabular-nums">{preferences.issue_interests.length}</span>
+        <span className="text-white/40 text-sm ml-2">
+          type{preferences.issue_interests.length !== 1 ? 's' : ''} selected
+        </span>
+      </motion.div>
+
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* NAVIGATION */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      <div className="flex justify-between">
+        <button
+          onClick={prevStep}
+          className="flex items-center gap-2 px-6 py-3 border border-white/10 text-white/60
+                     hover:border-white/30 hover:text-white transition-all duration-200
+                     text-sm tracking-widest uppercase font-mono"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          BACK
         </button>
         <button
           onClick={nextStep}
           disabled={preferences.issue_interests.length === 0}
-          className={`btn-primary ${
-            preferences.issue_interests.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
+          className={`
+            flex items-center gap-2 px-6 py-3 bg-[#FF6B00] text-black
+            text-sm tracking-widest uppercase font-bold
+            hover:bg-[#FF8533] transition-all duration-200
+            ${preferences.issue_interests.length === 0 ? 'opacity-30 cursor-not-allowed' : ''}
+          `}
         >
-          Continue
+          CONTINUE
+          <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     </motion.div>

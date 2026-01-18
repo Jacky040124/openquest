@@ -1,116 +1,35 @@
 import { motion } from 'framer-motion';
 import { usePreferencesStore } from '@/store/preferencesStore';
-import SelectionCard from '@/components/SelectionCard';
-import {
-  Globe, Smartphone, Monitor, Terminal, Server,
-  Package, Brain, Database, Wrench, Gamepad2,
-  Blocks, Cpu, Shield, Cog, Cloud
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import type { ProjectInterest } from '@/types/api';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PROJECT TYPES STEP - E2B INDUSTRIAL AESTHETIC
+// Terminal windows, ASCII art, orange accents, monospace typography
+// ═══════════════════════════════════════════════════════════════════════════════
 
 // Project interests matching backend ProjectInterest enum
 const projectInterests: {
   id: ProjectInterest;
   title: string;
-  description: string;
-  icon: React.ReactNode;
+  icon: string;
 }[] = [
-  {
-    id: 'webapp',
-    title: 'Web Applications',
-    description: 'Web frameworks, CMS, and web-based tools',
-    icon: <Globe className="w-6 h-6" />,
-  },
-  {
-    id: 'mobile',
-    title: 'Mobile Apps',
-    description: 'iOS, Android, and cross-platform development',
-    icon: <Smartphone className="w-6 h-6" />,
-  },
-  {
-    id: 'desktop',
-    title: 'Desktop Apps',
-    description: 'Native desktop applications',
-    icon: <Monitor className="w-6 h-6" />,
-  },
-  {
-    id: 'cli',
-    title: 'CLI Tools',
-    description: 'Command-line tools and utilities',
-    icon: <Terminal className="w-6 h-6" />,
-  },
-  {
-    id: 'api',
-    title: 'APIs & Backend',
-    description: 'REST APIs, GraphQL, and backend services',
-    icon: <Server className="w-6 h-6" />,
-  },
-  {
-    id: 'library',
-    title: 'Libraries',
-    description: 'Reusable libraries and packages',
-    icon: <Package className="w-6 h-6" />,
-  },
-  {
-    id: 'llm',
-    title: 'LLM & AI',
-    description: 'Large language models and AI applications',
-    icon: <Brain className="w-6 h-6" />,
-  },
-  {
-    id: 'ml',
-    title: 'Machine Learning',
-    description: 'ML frameworks and data science',
-    icon: <Brain className="w-6 h-6" />,
-  },
-  {
-    id: 'data',
-    title: 'Data & Analytics',
-    description: 'Data processing and visualization',
-    icon: <Database className="w-6 h-6" />,
-  },
-  {
-    id: 'devtools',
-    title: 'Developer Tools',
-    description: 'IDEs, build systems, and dev utilities',
-    icon: <Wrench className="w-6 h-6" />,
-  },
-  {
-    id: 'game',
-    title: 'Game Development',
-    description: 'Game engines and game-related tools',
-    icon: <Gamepad2 className="w-6 h-6" />,
-  },
-  {
-    id: 'blockchain',
-    title: 'Blockchain',
-    description: 'Cryptocurrency and decentralized apps',
-    icon: <Blocks className="w-6 h-6" />,
-  },
-  {
-    id: 'iot',
-    title: 'IoT & Embedded',
-    description: 'Internet of Things and embedded systems',
-    icon: <Cpu className="w-6 h-6" />,
-  },
-  {
-    id: 'security',
-    title: 'Security',
-    description: 'Security tools and privacy-focused apps',
-    icon: <Shield className="w-6 h-6" />,
-  },
-  {
-    id: 'automation',
-    title: 'Automation',
-    description: 'Automation scripts and workflows',
-    icon: <Cog className="w-6 h-6" />,
-  },
-  {
-    id: 'infrastructure',
-    title: 'Infrastructure',
-    description: 'Cloud, containers, and DevOps tools',
-    icon: <Cloud className="w-6 h-6" />,
-  },
+  { id: 'webapp', title: 'WEB APPS', icon: '◎' },
+  { id: 'mobile', title: 'MOBILE', icon: '◇' },
+  { id: 'desktop', title: 'DESKTOP', icon: '◆' },
+  { id: 'cli', title: 'CLI TOOLS', icon: '▶' },
+  { id: 'api', title: 'API/BACKEND', icon: '⟡' },
+  { id: 'library', title: 'LIBRARIES', icon: '⧉' },
+  { id: 'llm', title: 'LLM & AI', icon: '◈' },
+  { id: 'ml', title: 'MACHINE LEARNING', icon: '⬡' },
+  { id: 'data', title: 'DATA/ANALYTICS', icon: '▣' },
+  { id: 'devtools', title: 'DEV TOOLS', icon: '⚙' },
+  { id: 'game', title: 'GAME DEV', icon: '◉' },
+  { id: 'blockchain', title: 'BLOCKCHAIN', icon: '⬢' },
+  { id: 'iot', title: 'IOT/EMBEDDED', icon: '⊡' },
+  { id: 'security', title: 'SECURITY', icon: '⛨' },
+  { id: 'automation', title: 'AUTOMATION', icon: '⟳' },
+  { id: 'infrastructure', title: 'INFRASTRUCTURE', icon: '☁' },
 ];
 
 const ProjectTypesStep = () => {
@@ -124,48 +43,133 @@ const ProjectTypesStep = () => {
       exit={{ opacity: 0, x: -50 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-3">What types of projects interest you?</h2>
-        <p className="text-muted-foreground">
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* HEADER */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      <div className="text-center mb-10">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="inline-flex items-center gap-3 mb-6"
+        >
+          <span className="text-white/20 tracking-[0.3em] text-xs">━━━</span>
+          <span className="text-[11px] text-[#FF6B00] tracking-[0.3em] uppercase">SELECT PROJECT TYPES</span>
+          <span className="text-white/20 tracking-[0.3em] text-xs">━━━</span>
+        </motion.div>
+
+        <motion.h2
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-2xl md:text-3xl font-bold tracking-tight mb-3"
+          style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Monaco, monospace" }}
+        >
+          WHAT <span className="text-[#FF6B00]">PROJECTS</span> INTEREST YOU?
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-white/50 text-sm"
+        >
           Select the domains you'd like to contribute to
-        </p>
+        </motion.p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {projectInterests.map((type, index) => (
-          <motion.div
-            key={type.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.04 }}
-          >
-            <SelectionCard
-              title={type.title}
-              description={type.description}
-              icon={type.icon}
-              selected={preferences.project_interests.includes(type.id)}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* PROJECT TYPES GRID */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      <motion.div
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-8"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          visible: {
+            transition: {
+              staggerChildren: 0.03,
+            },
+          },
+        }}
+      >
+        {projectInterests.map((type) => {
+          const isSelected = preferences.project_interests.includes(type.id);
+          return (
+            <motion.button
+              key={type.id}
               onClick={() => toggleProjectInterest(type.id)}
-            />
-          </motion.div>
-        ))}
-      </div>
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                visible: { opacity: 1, y: 0 },
+              }}
+              className={`
+                relative p-4 border font-mono text-xs transition-all duration-200 text-left
+                ${isSelected
+                  ? 'border-[#FF6B00] bg-[#FF6B00]/10'
+                  : 'border-white/10 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.04]'
+                }
+              `}
+            >
+              {/* Icon */}
+              <div className={`text-lg mb-2 ${isSelected ? 'text-[#FF6B00]' : 'text-white/40'}`}>
+                {type.icon}
+              </div>
 
-      <div className="text-center mt-6 text-sm text-muted-foreground">
-        {preferences.project_interests.length} project type{preferences.project_interests.length !== 1 ? 's' : ''} selected
-      </div>
+              {/* Title */}
+              <div className={`tracking-wider text-[10px] ${isSelected ? 'text-[#FF6B00]' : 'text-white/60'}`}>
+                {type.title}
+              </div>
 
-      <div className="flex justify-between mt-8">
-        <button onClick={prevStep} className="btn-secondary">
-          Back
+              {/* Selection indicator */}
+              {isSelected && (
+                <span className="absolute top-2 right-2 text-[8px] text-[#FF6B00]">✓</span>
+              )}
+            </motion.button>
+          );
+        })}
+      </motion.div>
+
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* COUNTER */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="text-center mb-8"
+      >
+        <span className="font-mono text-lg text-[#FF6B00] tabular-nums">{preferences.project_interests.length}</span>
+        <span className="text-white/40 text-sm ml-2">
+          project type{preferences.project_interests.length !== 1 ? 's' : ''} selected
+        </span>
+      </motion.div>
+
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* NAVIGATION */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      <div className="flex justify-between">
+        <button
+          onClick={prevStep}
+          className="flex items-center gap-2 px-6 py-3 border border-white/10 text-white/60
+                     hover:border-white/30 hover:text-white transition-all duration-200
+                     text-sm tracking-widest uppercase font-mono"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          BACK
         </button>
         <button
           onClick={nextStep}
           disabled={preferences.project_interests.length === 0}
-          className={`btn-primary ${
-            preferences.project_interests.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
+          className={`
+            flex items-center gap-2 px-6 py-3 bg-[#FF6B00] text-black
+            text-sm tracking-widest uppercase font-bold
+            hover:bg-[#FF8533] transition-all duration-200
+            ${preferences.project_interests.length === 0 ? 'opacity-30 cursor-not-allowed' : ''}
+          `}
         >
-          View Summary
+          VIEW SUMMARY
+          <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     </motion.div>

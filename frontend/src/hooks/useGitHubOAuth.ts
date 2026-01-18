@@ -20,7 +20,7 @@ export const useGitHubStatus = () => {
 export const useGitHubAuthorize = () => {
   return useMutation({
     mutationFn: async () => {
-      const response = await api.get<GitHubAuthorizeResponse>('/auth/github/authorize');
+      const response = await api.get<GitHubAuthorizeResponse>('/oauth/github/authorize');
       // Redirect to GitHub OAuth page
       window.location.href = response.authorize_url;
       return response;
@@ -37,7 +37,7 @@ export const useGitHubCallback = () => {
   return useMutation({
     mutationFn: async ({ code, state }: { code: string; state: string }) => {
       const response = await api.post<{ username: string; isLoggedIn: boolean }>(
-        '/auth/github/callback',
+        '/oauth/github/callback',
         { code, state }
       );
       return response;
