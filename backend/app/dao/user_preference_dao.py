@@ -40,6 +40,8 @@ class UserPreferenceDAO:
         skills: list[dict],
         project_interests: list[str],
         issue_interests: list[str],
+        github_token: str | None = None,
+        github_username: str | None = None,
     ) -> UserPreference:
         """Create or update user preference"""
         existing = self.get_by_user_id(user_id)
@@ -52,6 +54,12 @@ class UserPreferenceDAO:
             "issue_interests": issue_interests,
             "updated_at": datetime.utcnow().isoformat(),
         }
+
+        # Only include GitHub fields if provided
+        if github_token is not None:
+            data["github_token"] = github_token
+        if github_username is not None:
+            data["github_username"] = github_username
 
         if existing:
             # Update existing
@@ -106,6 +114,35 @@ class UserPreferenceDAO:
             )
         return existing
 
+    def update_github(
+        self,
+        user_id: UUID,
+        github_token: str | None,
+        github_username: str | None,
+    ) -> UserPreference | None:
+        """Update GitHub token and username for a user"""
+        existing = self.get_by_user_id(user_id)
+
+        if not existing:
+            return None
+
+        update_data = {
+            "github_token": github_token,
+            "github_username": github_username,
+            "updated_at": datetime.utcnow().isoformat(),
+        }
+
+        response = (
+            self.supabase.table(self.table)
+            .update(update_data)
+            .eq("user_id", str(user_id))
+            .execute()
+        )
+
+        return self._dict_to_model(
+            response.data[0] if response.data else {**existing.__dict__, **update_data}
+        )
+
     def delete_by_user_id(self, user_id: UUID) -> bool:
         """Delete user preference by user_id"""
         try:
@@ -139,6 +176,8 @@ class UserPreferenceDAO:
                 self.skills = data.get("skills", [])
                 self.project_interests = data.get("project_interests", [])
                 self.issue_interests = data.get("issue_interests", [])
+                self.github_token = data.get("github_token")
+                self.github_username = data.get("github_username")
                 self.created_at = (
                     datetime.fromisoformat(data["created_at"].replace("Z", "+00:00"))
                     if isinstance(data.get("created_at"), str)

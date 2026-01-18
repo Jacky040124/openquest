@@ -72,6 +72,8 @@ class UserPreferenceCreateDTO(BaseModel):
     skills: list[SkillInputDTO] = []
     project_interests: list[ProjectInterest] = []
     issue_interests: list[IssueInterest] = []
+    github_token: str | None = None
+    github_username: str | None = None
 
 
 class UserPreferenceUpdateDTO(BaseModel):
@@ -81,6 +83,8 @@ class UserPreferenceUpdateDTO(BaseModel):
     skills: list[SkillInputDTO] | None = None
     project_interests: list[ProjectInterest] | None = None
     issue_interests: list[IssueInterest] | None = None
+    github_token: str | None = None
+    github_username: str | None = None
 
 
 class UserPreferenceDTO(BaseModel):
@@ -92,6 +96,8 @@ class UserPreferenceDTO(BaseModel):
     skills: list[SkillDTO]
     project_interests: list[str]
     issue_interests: list[str]
+    github_username: str | None = None
+    github_connected: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -106,8 +112,24 @@ class UserPreferenceDTO(BaseModel):
             skills=skills,
             project_interests=model.project_interests or [],
             issue_interests=model.issue_interests or [],
+            github_username=model.github_username,
+            github_connected=model.github_token is not None,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
 
     model_config = {"from_attributes": True}
+
+
+class GitHubConnectDTO(BaseModel):
+    """Request to connect GitHub account"""
+
+    access_token: str
+    username: str
+
+
+class GitHubStatusDTO(BaseModel):
+    """GitHub connection status response"""
+
+    connected: bool
+    username: str | None = None

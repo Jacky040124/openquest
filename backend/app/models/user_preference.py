@@ -245,6 +245,18 @@ class UserPreference(Base):
         default=list,
         comment="Issue types from IssueInterest enum (bug_fix, optimization, etc.)",
     )
+    github_token: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        default=None,
+        comment="GitHub OAuth token for agent push functionality",
+    )
+    github_username: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        default=None,
+        comment="GitHub username for display",
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

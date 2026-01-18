@@ -8,6 +8,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from ..dao.user_preference_dao import UserPreferenceDAO
 from ..dto.auth_dto import LoginDTO, RegisterDTO, TokenDTO, UserResponseDTO
 from ..dto.user_dto import (
+    GitHubConnectDTO,
+    GitHubStatusDTO,
     UserPreferenceCreateDTO,
     UserPreferenceDTO,
     UserPreferenceUpdateDTO,
@@ -335,4 +337,157 @@ async def update_user_preferences(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update user preferences: {str(e)}",
+        )
+
+
+# GitHub Connection endpoints
+@router.get("/me/github", response_model=GitHubStatusDTO)
+async def get_github_status(
+    current_user: CurrentUser,
+    supabase: SupabaseClient,
+) -> GitHubStatusDTO:
+    """
+    Get GitHub connection status.
+
+    Returns whether the user has connected their GitHub account
+    and their GitHub username if connected.
+    """
+    from uuid import UUID
+
+    try:
+        user_id = UUID(str(current_user["id"]))
+        dao = UserPreferenceDAO(supabase)
+        preference = dao.get_by_user_id(user_id)
+
+        if not preference:
+            return GitHubStatusDTO(connected=False)
+
+        return GitHubStatusDTO(
+            connected=preference.github_token is not None,
+            username=preference.github_username,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get GitHub status: {str(e)}",
+        )
+
+
+@router.post("/me/github", response_model=GitHubStatusDTO)
+async def connect_github(
+    data: GitHubConnectDTO,
+    current_user: CurrentUser,
+    supabase: SupabaseClient,
+) -> GitHubStatusDTO:
+    """
+    Connect GitHub account.
+
+    Saves the GitHub OAuth token for use by the agent when pushing code changes.
+
+    **Request body:**
+    - `access_token`: GitHub OAuth access token
+    - `username`: GitHub username
+    """
+    from uuid import UUID
+
+    try:
+        user_id = UUID(str(current_user["id"]))
+        dao = UserPreferenceDAO(supabase)
+
+        # Update or create preferences with GitHub token
+        preference = dao.update_github(
+            user_id=user_id,
+            github_token=data.access_token,
+            github_username=data.username,
+        )
+
+        if not preference:
+            # Create preferences if they don't exist
+            preference = dao.create_or_update(
+                user_id=user_id,
+                languages=[],
+                skills=[],
+                project_interests=[],
+                issue_interests=[],
+                github_token=data.access_token,
+                github_username=data.username,
+            )
+
+        logger.info(f"GitHub connected for user {user_id}: @{data.username}")
+
+        return GitHubStatusDTO(
+            connected=True,
+            username=data.username,
+        )
+    except Exception as e:
+        logger.error(f"Failed to connect GitHub: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to connect GitHub: {str(e)}",
+        )
+
+
+@router.delete("/me/github", status_code=status.HTTP_204_NO_CONTENT)
+async def disconnect_github(
+    current_user: CurrentUser,
+    supabase: SupabaseClient,
+) -> None:
+    """
+    Disconnect GitHub account.
+
+    Removes the stored GitHub OAuth token.
+    """
+    from uuid import UUID
+
+    try:
+        user_id = UUID(str(current_user["id"]))
+        dao = UserPreferenceDAO(supabase)
+
+        dao.update_github(
+            user_id=user_id,
+            github_token=None,
+            github_username=None,
+        )
+
+        logger.info(f"GitHub disconnected for user {user_id}")
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to disconnect GitHub: {str(e)}",
+        )
+
+
+@router.get("/me/github/token")
+async def get_github_token(
+    current_user: CurrentUser,
+    supabase: SupabaseClient,
+) -> dict:
+    """
+    Get the stored GitHub token.
+
+    This endpoint is used internally by the agent to get the user's
+    GitHub token for pushing code changes.
+
+    **Note:** Only returns the token if connected. Returns 404 if not connected.
+    """
+    from uuid import UUID
+
+    try:
+        user_id = UUID(str(current_user["id"]))
+        dao = UserPreferenceDAO(supabase)
+        preference = dao.get_by_user_id(user_id)
+
+        if not preference or not preference.github_token:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="GitHub not connected. Please connect your GitHub account first.",
+            )
+
+        return {"token": preference.github_token}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get GitHub token: {str(e)}",
         )

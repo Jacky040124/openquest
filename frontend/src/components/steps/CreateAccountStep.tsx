@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { useRegister, useLogin, useCreatePreferences } from '@/hooks/useAuth';
+import { getAndClearOAuthToken } from '@/hooks/useGitHubOAuth';
 import { Mail, Lock, Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,8 +12,8 @@ import { Label } from '@/components/ui/label';
 
 const CreateAccountStep = () => {
   const navigate = useNavigate();
-  const { error: authError, setError } = useAuthStore();
-  const { preferences, getSkillsForApi } = usePreferencesStore();
+  const { error: authError, setError, githubConnected, githubToken, githubUsername } = useAuthStore();
+  const { preferences, getSkillsForApi, resetPreferences } = usePreferencesStore();
   const registerMutation = useRegister();
   const loginMutation = useLogin();
   const createPrefsMutation = useCreatePreferences();
@@ -55,15 +56,23 @@ const CreateAccountStep = () => {
       // 2. Login to get tokens
       await loginMutation.mutateAsync({ email: email.trim(), password });
 
-      // 3. Create preferences
+      // 3. Get GitHub token (from authStore or sessionStorage as fallback)
+      const token = githubToken || getAndClearOAuthToken();
+
+      // 4. Create preferences (include GitHub token if available from previous step)
       await createPrefsMutation.mutateAsync({
         languages: preferences.languages,
         skills: getSkillsForApi(),
         project_interests: preferences.project_interests,
         issue_interests: preferences.issue_interests,
+        github_token: token || undefined,
+        github_username: githubConnected ? githubUsername || undefined : undefined,
       });
 
-      // 4. Navigate to dashboard
+      // 5. Reset preferences store (clear onboarding state)
+      resetPreferences();
+
+      // 6. Navigate to dashboard
       navigate('/dashboard');
     } catch (err) {
       // Errors are handled by the mutation hooks

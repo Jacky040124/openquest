@@ -132,6 +132,8 @@ export interface UserPreferenceCreateDTO {
   skills: SkillInputDTO[];
   project_interests: ProjectInterest[];
   issue_interests: IssueInterest[];
+  github_token?: string;
+  github_username?: string;
 }
 
 export interface UserPreferenceUpdateDTO {
@@ -148,6 +150,8 @@ export interface UserPreferenceDTO {
   skills: SkillDTO[];
   project_interests: string[];
   issue_interests: string[];
+  github_username?: string;
+  github_connected: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -241,4 +245,42 @@ export interface ContributionAnalysisDTO {
     unique_modules: number;
     analysis_period_days: number;
   };
+}
+
+// ============================================
+// GitHub OAuth DTOs
+// ============================================
+
+export interface GitHubAuthorizeResponse {
+  authorize_url: string;
+  state: string;
+}
+
+export interface GitHubTokenResponse {
+  access_token: string;
+  token_type: string;
+  scope: string;
+}
+
+export interface GitHubCallbackRequest {
+  code: string;
+  state: string;
+}
+
+export interface GitHubUserResponse {
+  id: number;
+  login: string;
+  name?: string;
+  email?: string;
+  avatar_url?: string;
+}
+
+export interface GitHubConnectDTO {
+  access_token: string;
+  username: string;
+}
+
+export interface GitHubStatusDTO {
+  connected: boolean;
+  username?: string;
 }
