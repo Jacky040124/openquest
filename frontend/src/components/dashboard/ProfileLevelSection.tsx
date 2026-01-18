@@ -1,6 +1,6 @@
-import { useLevelingStore, getXPForLevel, getCurrentBadge, getNextBadge, BADGES } from '@/store/levelingStore';
+import { useLevelingStore, getXPForLevel, getCurrentBadge, getNextBadge } from '@/store/levelingStore';
 import { Progress } from '@/components/ui/progress';
-import { Award, Zap, TrendingUp } from 'lucide-react';
+import { Zap, TrendingUp } from 'lucide-react';
 
 const ProfileLevelSection = () => {
   const { currentXP, level } = useLevelingStore();
@@ -14,8 +14,19 @@ const ProfileLevelSection = () => {
       {/* Current Badge Display */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className={`p-2 rounded-lg ${currentBadge.bgColor}`}>
-            <Award className={`w-5 h-5 ${currentBadge.color}`} />
+          <div className={`w-12 h-12 flex items-center justify-center ${
+            currentBadge.name === 'Oracle' ? 'relative' : ''
+          }`}>
+            {currentBadge.name === 'Oracle' && (
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-300/40 via-purple-300/40 to-cyan-300/40 blur-md animate-pulse" />
+            )}
+            <img 
+              src={currentBadge.image} 
+              alt={`${currentBadge.name} badge`}
+              className={`w-12 h-12 object-contain relative z-10 ${
+                currentBadge.name === 'Oracle' ? 'drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]' : ''
+              }`}
+            />
           </div>
           <div>
             <p className={`font-semibold text-sm ${currentBadge.color}`}>
@@ -51,9 +62,16 @@ const ProfileLevelSection = () => {
       {nextBadge && (
         <div className="flex items-center gap-2 pt-1 border-t border-border/50">
           <TrendingUp className="w-3 h-3 text-muted-foreground" />
-          <p className="text-xs text-muted-foreground">
-            Next badge: <span className={nextBadge.color}>{nextBadge.name}</span> at level {nextBadge.level}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-xs text-muted-foreground">Next badge:</p>
+            <img 
+              src={nextBadge.image} 
+              alt={`${nextBadge.name} badge`}
+              className="w-5 h-5 object-contain"
+            />
+            <span className={`text-xs ${nextBadge.color}`}>{nextBadge.name}</span>
+            <span className="text-xs text-muted-foreground">at level {nextBadge.level}</span>
+          </div>
         </div>
       )}
     </div>

@@ -2,17 +2,16 @@ import { User, Code2, Layers, Target, Folder, Edit2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { useAuthStore } from '@/store/authStore';
 import type { Preferences } from '@/store/preferencesStore';
 
 interface ProfileSidebarProps {
   preferences: Preferences;
+  userName?: string;
   onClose: () => void;
   onEditPreferences: () => void;
 }
 
-const ProfileSidebar = ({ preferences, onClose, onEditPreferences }: ProfileSidebarProps) => {
-  const { user } = useAuthStore();
+const ProfileSidebar = ({ preferences, userName, onClose, onEditPreferences }: ProfileSidebarProps) => {
 
   return (
     <div className="fixed inset-y-0 right-0 w-80 bg-card border-l border-border shadow-xl z-50 overflow-y-auto">
@@ -31,9 +30,9 @@ const ProfileSidebar = ({ preferences, onClose, onEditPreferences }: ProfileSide
             <User className="w-8 h-8 text-primary" />
           </div>
           <div>
-            <h3 className="font-semibold text-lg">{user?.username || 'Developer'}</h3>
-            <p className="text-muted-foreground text-sm capitalize">
-              {preferences.experienceLevel || 'New'} contributor
+            <h3 className="font-semibold text-lg">{userName || 'Developer'}</h3>
+            <p className="text-muted-foreground text-sm">
+              Open Source Contributor
             </p>
           </div>
         </div>
@@ -65,21 +64,21 @@ const ProfileSidebar = ({ preferences, onClose, onEditPreferences }: ProfileSide
             </div>
           </div>
 
-          {/* Frameworks */}
+          {/* Skills */}
           <div>
             <div className="flex items-center gap-2 text-sm font-medium mb-2">
               <Layers className="w-4 h-4 text-primary" />
-              <span>Frameworks</span>
+              <span>Skills</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {preferences.frameworks.length > 0 ? (
-                preferences.frameworks.map((framework) => (
+              {preferences.skills.length > 0 ? (
+                preferences.skills.map((skill) => (
                   <Badge
-                    key={framework}
+                    key={skill.name}
                     variant="secondary"
                     className="text-xs bg-secondary/50"
                   >
-                    {framework}
+                    {skill.name}
                   </Badge>
                 ))
               ) : (
@@ -95,8 +94,8 @@ const ProfileSidebar = ({ preferences, onClose, onEditPreferences }: ProfileSide
               <span>Issue Types</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {preferences.issueTypes.length > 0 ? (
-                preferences.issueTypes.map((type) => (
+              {preferences.issue_interests.length > 0 ? (
+                preferences.issue_interests.map((type) => (
                   <Badge
                     key={type}
                     variant="secondary"
@@ -118,8 +117,8 @@ const ProfileSidebar = ({ preferences, onClose, onEditPreferences }: ProfileSide
               <span>Project Types</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {preferences.projectTypes.length > 0 ? (
-                preferences.projectTypes.map((type) => (
+              {preferences.project_interests.length > 0 ? (
+                preferences.project_interests.map((type) => (
                   <Badge
                     key={type}
                     variant="secondary"

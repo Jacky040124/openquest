@@ -10,10 +10,9 @@ import IssueTypesStep from '@/components/steps/IssueTypesStep';
 import ProjectTypesStep from '@/components/steps/ProjectTypesStep';
 import SummaryStep from '@/components/steps/SummaryStep';
 import CreateAccountStep from '@/components/steps/CreateAccountStep';
-import GitHubConnectStep from '@/components/steps/GitHubConnectStep';
 import logo from "@/assets/logo.png";
 
-// Steps: Welcome(0), Languages(1), Skills(2), IssueTypes(3), ProjectTypes(4), Summary(5), GitHubConnect(6), CreateAccount(7)
+// Steps: Welcome(0), Languages(1), Skills(2), IssueTypes(3), ProjectTypes(4), Summary(5), CreateAccount(6)
 const steps = [
   WelcomeStep,
   LanguagesStep,
@@ -21,7 +20,6 @@ const steps = [
   IssueTypesStep,
   ProjectTypesStep,
   SummaryStep,
-  GitHubConnectStep,
   CreateAccountStep,
 ];
 
@@ -66,7 +64,7 @@ const Index = () => {
         </motion.div>
       </header>
 
-      {/* Step Indicator - show only for preference steps (1-5), hide on welcome, GitHub connect, and account creation */}
+      {/* Step Indicator - hide on welcome and account creation steps */}
       {currentStep > 0 && currentStep < 6 && (
         <motion.div
           className="relative z-10 py-4 flex-shrink-0"

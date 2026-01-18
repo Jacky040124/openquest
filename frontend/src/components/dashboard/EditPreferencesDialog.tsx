@@ -1,10 +1,17 @@
-import { useState } from 'react';
-import { User, Code2, Wrench, Target, Folder, ChevronDown, ChevronUp, Plus, X, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Code2, Wrench, Target, Folder, ChevronDown, ChevronUp, Plus, X, Loader2, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/authStore';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { usePreferencesStore, SkillWithFamiliarity } from '@/store/preferencesStore';
 import { useUpdatePreferences, useUserPreferences } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -83,8 +90,11 @@ const EditPreferencesDialog = ({ open, onOpenChange }: EditPreferencesDialogProp
     getSkillsForApi,
   } = usePreferencesStore();
 
-  const { refetch: refetchPrefs } = useUserPreferences();
+  const { data: userPrefs, refetch: refetchPrefs } = useUserPreferences();
   const updatePrefsMutation = useUpdatePreferences();
+
+  const [editedUsername, setEditedUsername] = useState(userPrefs?.user_name || '');
+  const [usernameError, setUsernameError] = useState('');
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     account: true,
@@ -103,6 +113,14 @@ const EditPreferencesDialog = ({ open, onOpenChange }: EditPreferencesDialogProp
   });
   const [customLanguages, setCustomLanguages] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Reset username when dialog opens
+  useEffect(() => {
+    if (open) {
+      setEditedUsername(userPrefs?.user_name || '');
+      setUsernameError('');
+    }
+  }, [open, userPrefs?.user_name]);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -136,19 +154,46 @@ const EditPreferencesDialog = ({ open, onOpenChange }: EditPreferencesDialogProp
     }
   };
 
+  const validateUsername = (value: string): boolean => {
+    if (!value.trim()) {
+      setUsernameError('Username is required');
+      return false;
+    }
+    if (value.trim().length < 3) {
+      setUsernameError('Username must be at least 3 characters');
+      return false;
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(value.trim())) {
+      setUsernameError('Username can only contain letters, numbers, underscores, and hyphens');
+      return false;
+    }
+    setUsernameError('');
+    return true;
+  };
+
   const handleSave = async () => {
+    if (!validateUsername(editedUsername)) {
+      return;
+    }
+
     setIsSaving(true);
     try {
-      await updatePrefsMutation.mutateAsync({
-        languages: preferences.languages,
-        skills: getSkillsForApi(),
-        project_interests: preferences.project_interests,
-        issue_interests: preferences.issue_interests,
-      });
-      await refetchPrefs();
+      // Update preferences including user_name
+      try {
+        await updatePrefsMutation.mutateAsync({
+          user_name: editedUsername.trim(),
+          languages: preferences.languages,
+          skills: getSkillsForApi(),
+          project_interests: preferences.project_interests,
+          issue_interests: preferences.issue_interests,
+        });
+        await refetchPrefs();
+      } catch {
+        // API failed, preferences are already in local store
+      }
       onOpenChange(false);
     } catch (error) {
-      console.error('Failed to save preferences:', error);
+      console.error('Failed to save:', error);
     } finally {
       setIsSaving(false);
     }
@@ -196,15 +241,31 @@ const EditPreferencesDialog = ({ open, onOpenChange }: EditPreferencesDialogProp
           <div>
             <SectionHeader section="account" icon={User} title="Account Info" />
             {expandedSections.account && (
-              <div className="mt-3 p-3 border border-border rounded-lg">
+              <div className="mt-3 p-3 border border-border rounded-lg space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center">
                     <User className="w-6 h-6 text-primary" />
                   </div>
-                  <div>
-                    <p className="font-medium">{user?.email || 'Not logged in'}</p>
-                    <p className="text-sm text-muted-foreground">Email cannot be changed</p>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">{user?.email || 'Not logged in'}</p>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-sm font-medium">Username</Label>
+                  <Input
+                    id="username"
+                    value={editedUsername}
+                    onChange={(e) => {
+                      setEditedUsername(e.target.value);
+                      setUsernameError('');
+                    }}
+                    placeholder="Enter username"
+                    className={cn(usernameError && "border-destructive")}
+                  />
+                  {usernameError && (
+                    <p className="text-xs text-destructive">{usernameError}</p>
+                  )}
                 </div>
               </div>
             )}
@@ -228,8 +289,8 @@ const EditPreferencesDialog = ({ open, onOpenChange }: EditPreferencesDialogProp
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
                         preferences.languages.includes(lang)
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card border border-border hover:border-primary/50"
+                          ? "bg-secondary text-secondary-foreground"
+                          : "bg-card border border-border hover:border-secondary/50"
                       )}
                     >
                       {lang}
@@ -239,7 +300,7 @@ const EditPreferencesDialog = ({ open, onOpenChange }: EditPreferencesDialogProp
                   {!showOtherInput.languages && (
                     <button
                       onClick={() => setShowOtherInput(prev => ({ ...prev, languages: true }))}
-                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all bg-card border border-dashed border-border hover:border-primary/50 flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all bg-card border border-dashed border-border hover:border-secondary/50 flex items-center gap-1"
                     >
                       <Plus className="w-3 h-3" />
                       Other
@@ -290,67 +351,57 @@ const EditPreferencesDialog = ({ open, onOpenChange }: EditPreferencesDialogProp
                     const selected = isSkillSelected(skill.id);
                     const familiarity = getSkillFamiliarity(skill.id);
 
-                    return (
-                      <div key={skill.id} className="relative">
-                        <button
-                          onClick={() => handleSkillClick(skill.id)}
-                          className={cn(
-                            "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
-                            selected
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-card border border-border hover:border-primary/50"
-                          )}
-                        >
-                          {skill.label}
-                        </button>
-                        {selected && (
-                          <div className="absolute -bottom-8 left-0 flex gap-0.5 z-10">
+                    if (selected) {
+                      return (
+                        <DropdownMenu key={skill.id}>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all bg-secondary text-secondary-foreground flex items-center gap-1.5"
+                            >
+                              {skill.label}
+                              <span className="text-xs opacity-80">
+                                ({familiarityLevels.find(l => l.id === familiarity)?.label.charAt(0)})
+                              </span>
+                              <ChevronDown className="w-3 h-3 opacity-60" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="bg-popover border border-border z-50">
                             {familiarityLevels.map((level) => (
-                              <button
+                              <DropdownMenuItem
                                 key={level.id}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateSkillFamiliarity(skill.id, level.id);
-                                }}
+                                onClick={() => updateSkillFamiliarity(skill.id, level.id)}
                                 className={cn(
-                                  "px-1 py-0.5 text-xs rounded transition-all",
-                                  familiarity === level.id
-                                    ? "bg-accent text-accent-foreground"
-                                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                  "cursor-pointer",
+                                  familiarity === level.id && "bg-secondary/20"
                                 )}
-                                title={level.label}
                               >
-                                {level.label.charAt(0)}
-                              </button>
+                                <Check className={cn("w-4 h-4 mr-2", familiarity === level.id ? "opacity-100" : "opacity-0")} />
+                                {level.label}
+                              </DropdownMenuItem>
                             ))}
-                          </div>
-                        )}
-                      </div>
+                            <DropdownMenuItem
+                              onClick={() => removeSkill(skill.id)}
+                              className="cursor-pointer text-destructive focus:text-destructive"
+                            >
+                              <X className="w-4 h-4 mr-2" />
+                              Remove
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={skill.id}
+                        onClick={() => handleSkillClick(skill.id)}
+                        className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all bg-card border border-border hover:border-secondary/50"
+                      >
+                        {skill.label}
+                      </button>
                     );
                   })}
                 </div>
-
-                {preferences.skills.length > 0 && (
-                  <div className="mt-8 pt-3 border-t border-border">
-                    <p className="text-xs text-muted-foreground mb-2">Selected skills:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {preferences.skills.map((skill) => {
-                        const skillInfo = defaultSkills.find(s => s.id === skill.name);
-                        return (
-                          <Badge key={skill.name} variant="secondary" className="flex items-center gap-1">
-                            {skillInfo?.label || skill.name}
-                            <span className="text-xs opacity-70">
-                              ({familiarityLevels.find(l => l.id === skill.familiarity)?.label})
-                            </span>
-                            <button onClick={() => removeSkill(skill.name)}>
-                              <X className="w-3 h-3" />
-                            </button>
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -373,8 +424,8 @@ const EditPreferencesDialog = ({ open, onOpenChange }: EditPreferencesDialogProp
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
                         preferences.issue_interests.includes(interest.id)
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card border border-border hover:border-primary/50"
+                          ? "bg-secondary text-secondary-foreground"
+                          : "bg-card border border-border hover:border-secondary/50"
                       )}
                     >
                       {interest.label}
@@ -403,8 +454,8 @@ const EditPreferencesDialog = ({ open, onOpenChange }: EditPreferencesDialogProp
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
                         preferences.project_interests.includes(interest.id)
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card border border-border hover:border-primary/50"
+                          ? "bg-secondary text-secondary-foreground"
+                          : "bg-card border border-border hover:border-secondary/50"
                       )}
                     >
                       {interest.label}

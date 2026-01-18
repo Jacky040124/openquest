@@ -4,20 +4,20 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { useRegister, useLogin, useCreatePreferences } from '@/hooks/useAuth';
-import { getAndClearOAuthToken } from '@/hooks/useGitHubOAuth';
-import { Mail, Lock, Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, UserPlus, Loader2, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 
 const CreateAccountStep = () => {
   const navigate = useNavigate();
-  const { error: authError, setError, githubConnected, githubToken, githubUsername } = useAuthStore();
-  const { preferences, getSkillsForApi, resetPreferences } = usePreferencesStore();
+  const { error: authError, setError } = useAuthStore();
+  const { preferences, getSkillsForApi } = usePreferencesStore();
   const registerMutation = useRegister();
   const loginMutation = useLogin();
   const createPrefsMutation = useCreatePreferences();
 
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,6 +32,18 @@ const CreateAccountStep = () => {
     setError(null);
 
     // Validation
+    if (!username.trim()) {
+      setLocalError('Please enter a username');
+      return;
+    }
+    if (username.trim().length < 3) {
+      setLocalError('Username must be at least 3 characters');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(username.trim())) {
+      setLocalError('Username can only contain letters, numbers, underscores, and hyphens');
+      return;
+    }
     if (!email.trim()) {
       setLocalError('Please enter an email address');
       return;
@@ -51,28 +63,21 @@ const CreateAccountStep = () => {
 
     try {
       // 1. Register the user
-      await registerMutation.mutateAsync({ email: email.trim(), password });
+      await registerMutation.mutateAsync({ email: email.trim(), password, username: username.trim() });
 
       // 2. Login to get tokens
       await loginMutation.mutateAsync({ email: email.trim(), password });
 
-      // 3. Get GitHub token (from authStore or sessionStorage as fallback)
-      const token = githubToken || getAndClearOAuthToken();
-
-      // 4. Create preferences (include GitHub token if available from previous step)
+      // 3. Create preferences with user_name
       await createPrefsMutation.mutateAsync({
+        user_name: username.trim(),
         languages: preferences.languages,
         skills: getSkillsForApi(),
         project_interests: preferences.project_interests,
         issue_interests: preferences.issue_interests,
-        github_token: token || undefined,
-        github_username: githubConnected ? githubUsername || undefined : undefined,
       });
 
-      // 5. Reset preferences store (clear onboarding state)
-      resetPreferences();
-
-      // 6. Navigate to dashboard
+      // 4. Navigate to dashboard
       navigate('/dashboard');
     } catch (err) {
       // Errors are handled by the mutation hooks
@@ -126,6 +131,27 @@ const CreateAccountStep = () => {
             {displayError}
           </motion.div>
         )}
+
+        <div className="space-y-2">
+          <Label htmlFor="username" className="flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Username
+          </Label>
+          <Input
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => {
+              setUsername(e.target.value);
+              setLocalError('');
+              setError(null);
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder="Choose a username"
+            className="bg-background"
+            disabled={isLoading}
+          />
+        </div>
 
         <div className="space-y-2">
           <Label htmlFor="email" className="flex items-center gap-2">

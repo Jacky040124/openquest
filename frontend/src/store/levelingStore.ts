@@ -1,24 +1,38 @@
 import { create } from 'zustand';
 
+// Badge images
+import ironBadge from '@/assets/badges/iron.png';
+import bronzeBadge from '@/assets/badges/bronze.png';
+import silverBadge from '@/assets/badges/silver.png';
+import goldBadge from '@/assets/badges/gold.png';
+import platinumBadge from '@/assets/badges/platinum.png';
+import diamondBadge from '@/assets/badges/diamond.png';
+import grandmasterBadge from '@/assets/badges/grandmaster.png';
+import championBadge from '@/assets/badges/champion.png';
+import cipherBadge from '@/assets/badges/cipher.png';
+import quantumBadge from '@/assets/badges/quantum.png';
+import oracleBadge from '@/assets/badges/oracle.png';
+
 export interface Badge {
   name: string;
   level: number;
   color: string;
   bgColor: string;
+  image: string;
 }
 
 export const BADGES: Badge[] = [
-  { name: 'Iron', level: 0, color: 'text-gray-400', bgColor: 'bg-gray-400/20' },
-  { name: 'Bronze', level: 5, color: 'text-amber-600', bgColor: 'bg-amber-600/20' },
-  { name: 'Silver', level: 10, color: 'text-gray-300', bgColor: 'bg-gray-300/20' },
-  { name: 'Gold', level: 15, color: 'text-yellow-400', bgColor: 'bg-yellow-400/20' },
-  { name: 'Platinum', level: 20, color: 'text-cyan-300', bgColor: 'bg-cyan-300/20' },
-  { name: 'Diamond', level: 25, color: 'text-blue-400', bgColor: 'bg-blue-400/20' },
-  { name: 'Grandmaster', level: 30, color: 'text-purple-400', bgColor: 'bg-purple-400/20' },
-  { name: 'Champion', level: 35, color: 'text-red-400', bgColor: 'bg-red-400/20' },
-  { name: 'Cipher', level: 40, color: 'text-emerald-400', bgColor: 'bg-emerald-400/20' },
-  { name: 'Quantum', level: 45, color: 'text-indigo-400', bgColor: 'bg-indigo-400/20' },
-  { name: 'Oracle', level: 50, color: 'text-amber-300', bgColor: 'bg-gradient-to-r from-amber-400/20 to-orange-400/20' },
+  { name: 'Iron', level: 0, color: 'text-gray-400', bgColor: 'bg-gray-400/20', image: ironBadge },
+  { name: 'Bronze', level: 5, color: 'text-amber-600', bgColor: 'bg-amber-600/20', image: bronzeBadge },
+  { name: 'Silver', level: 10, color: 'text-gray-300', bgColor: 'bg-gray-300/20', image: silverBadge },
+  { name: 'Gold', level: 15, color: 'text-yellow-400', bgColor: 'bg-yellow-400/20', image: goldBadge },
+  { name: 'Platinum', level: 20, color: 'text-cyan-300', bgColor: 'bg-cyan-300/20', image: platinumBadge },
+  { name: 'Diamond', level: 25, color: 'text-blue-400', bgColor: 'bg-blue-400/20', image: diamondBadge },
+  { name: 'Grandmaster', level: 30, color: 'text-purple-400', bgColor: 'bg-purple-400/20', image: grandmasterBadge },
+  { name: 'Champion', level: 35, color: 'text-red-400', bgColor: 'bg-red-400/20', image: championBadge },
+  { name: 'Cipher', level: 40, color: 'text-emerald-400', bgColor: 'bg-emerald-400/20', image: cipherBadge },
+  { name: 'Quantum', level: 45, color: 'text-indigo-400', bgColor: 'bg-indigo-400/20', image: quantumBadge },
+  { name: 'Oracle', level: 50, color: 'text-amber-300', bgColor: 'bg-gradient-to-r from-amber-400/20 to-orange-400/20', image: oracleBadge },
 ];
 
 // XP required for each level (exponential growth)
@@ -95,8 +109,8 @@ interface LevelingState {
 }
 
 export const useLevelingStore = create<LevelingState>((set, get) => ({
-  currentXP: 150, // Start with some XP for demo
-  level: 2, // Start at level 2 for demo
+  currentXP: 850, // XP towards next level
+  level: 22, // Platinum rank (20-24)
   
   addXP: (amount: number) => {
     const { currentXP, level } = get();

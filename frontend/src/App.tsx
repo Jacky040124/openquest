@@ -8,19 +8,9 @@ import Login from "./pages/Login";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Issues from "./pages/Issues";
-import GitHubCallback from "./pages/GitHubCallback";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes default
-      gcTime: 10 * 60 * 1000, // 10 minutes default
-      refetchOnWindowFocus: false, // Don't refetch on window focus by default
-      refetchOnReconnect: false, // Don't refetch on reconnect by default
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -34,7 +24,6 @@ const App = () => (
           <Route path="/onboarding" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/issues" element={<Issues />} />
-          <Route path="/auth/github/callback" element={<GitHubCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
