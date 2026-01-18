@@ -9,7 +9,6 @@ from fastapi.responses import JSONResponse
 
 from .config import get_settings
 from .controllers.auth_controller import router as auth_router
-from .controllers.contribution_controller import router as contribution_router
 from .controllers.issue_controller import router as issue_router
 from .controllers.repo_controller import router as repo_router
 
@@ -84,7 +83,6 @@ def create_app() -> FastAPI:
 
     # Include routers
     app.include_router(auth_router, prefix="/api/v1")
-    app.include_router(contribution_router, prefix="/api/v1")
     app.include_router(issue_router, prefix="/api/v1")
     app.include_router(repo_router, prefix="/api/v1")
 
