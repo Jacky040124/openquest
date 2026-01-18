@@ -55,8 +55,20 @@ const RepoCard = ({ repo }: RepoCardProps) => {
     navigate(`/issues?repo_url=${encodeURIComponent(repo.url)}&repo_name=${encodeURIComponent(repo.full_name)}`);
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on the GitHub link or the button
+    const target = e.target as HTMLElement;
+    if (target.closest('a[href]') || target.closest('button')) {
+      return;
+    }
+    handleViewIssues();
+  };
+
   return (
-    <div className="card-interactive p-5 group">
+    <div 
+      className="card-interactive p-5 group cursor-pointer"
+      onClick={handleCardClick}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           {/* Header */}
@@ -65,6 +77,7 @@ const RepoCard = ({ repo }: RepoCardProps) => {
               href={repo.url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-2 hover:text-primary transition-colors"
             >
               <span className="text-muted-foreground text-sm">{owner}/</span>
@@ -133,7 +146,10 @@ const RepoCard = ({ repo }: RepoCardProps) => {
           <Button 
             size="sm" 
             className="btn-primary text-sm"
-            onClick={handleViewIssues}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewIssues();
+            }}
           >
             View Issues
           </Button>
