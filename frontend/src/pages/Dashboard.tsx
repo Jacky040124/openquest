@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, Search, Filter, RefreshCw, Code2, Layers, Target, Folder, Edit2, ArrowUpDown } from 'lucide-react';
+import { User, LogOut, Search, Filter, RefreshCw, Code2, Layers, Target, Folder, Edit2, ArrowUpDown, Loader2, Wrench } from 'lucide-react';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { useAuthStore } from '@/store/authStore';
+import { useLogout, useUserPreferences } from '@/hooks/useAuth';
+import { useRecommendations } from '@/hooks/useRepos';
 import { useState, useMemo } from 'react';
 import {
   DropdownMenu,
@@ -73,35 +75,39 @@ const Dashboard = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [showEditPreferences, setShowEditPreferences] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
-  const [sortBy, setSortBy] = useState<'match' | 'stars' | 'issues' | 'forks'>('match');
+  const [sortBy, setSortBy] = useState<'stars' | 'issues' | 'forks'>('stars');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const filteredAndSortedRepos = useMemo(() => {
-    const filtered = mockRepos.filter(repo =>
+    if (!repos) return [];
+    
+    const filtered = repos.filter(repo =>
       repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      repo.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (repo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
       repo.topics.some(topic => topic.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     return filtered.sort((a, b) => {
       let comparison = 0;
       switch (sortBy) {
-        case 'match':
-          comparison = a.matchScore - b.matchScore;
-          break;
         case 'stars':
           comparison = a.stars - b.stars;
           break;
         case 'issues':
-          comparison = a.goodFirstIssues - b.goodFirstIssues;
+          comparison = a.open_issues_count - b.open_issues_count;
           break;
         case 'forks':
-          comparison = a.forks - b.forks;
+          // RepoDTO doesn't have forks, use stars as fallback
+          comparison = a.stars - b.stars;
+          break;
+        default:
+          // Default sort by stars
+          comparison = a.stars - b.stars;
           break;
       }
       return sortOrder === 'desc' ? -comparison : comparison;
     });
-  }, [searchQuery, sortBy, sortOrder]);
+  }, [repos, searchQuery, sortBy, sortOrder]);
 
 
   const handleLogoClick = () => {
@@ -207,8 +213,8 @@ const Dashboard = () => {
                         <span>Languages</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {displayPrefs.languages.length > 0 ? (
-                          displayPrefs.languages.slice(0, 4).map((lang) => (
+                        {userPrefs?.languages && userPrefs.languages.length > 0 ? (
+                          userPrefs.languages.slice(0, 4).map((lang) => (
                             <Badge key={lang} variant="secondary" className="text-xs">
                               {lang}
                             </Badge>
@@ -216,8 +222,8 @@ const Dashboard = () => {
                         ) : (
                           <span className="text-muted-foreground text-xs">None selected</span>
                         )}
-                        {displayPrefs.languages.length > 4 && (
-                          <Badge variant="outline" className="text-xs">+{displayPrefs.languages.length - 4}</Badge>
+                        {userPrefs?.languages && userPrefs.languages.length > 4 && (
+                          <Badge variant="outline" className="text-xs">+{userPrefs.languages.length - 4}</Badge>
                         )}
                       </div>
                     </div>
@@ -229,8 +235,8 @@ const Dashboard = () => {
                         <span>Skills</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {displayPrefs.skills.length > 0 ? (
-                          displayPrefs.skills.slice(0, 4).map((skill) => (
+                        {userPrefs?.skills && userPrefs.skills.length > 0 ? (
+                          userPrefs.skills.slice(0, 4).map((skill) => (
                             <Badge key={skill.name} variant="secondary" className="text-xs capitalize">
                               {skill.name}
                             </Badge>
@@ -238,8 +244,8 @@ const Dashboard = () => {
                         ) : (
                           <span className="text-muted-foreground text-xs">None selected</span>
                         )}
-                        {displayPrefs.skills.length > 4 && (
-                          <Badge variant="outline" className="text-xs">+{displayPrefs.skills.length - 4}</Badge>
+                        {userPrefs?.skills && userPrefs.skills.length > 4 && (
+                          <Badge variant="outline" className="text-xs">+{userPrefs.skills.length - 4}</Badge>
                         )}
                       </div>
                     </div>
@@ -251,8 +257,8 @@ const Dashboard = () => {
                         <span>Issue Types</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {displayPrefs.issue_interests.length > 0 ? (
-                          displayPrefs.issue_interests.slice(0, 3).map((interest) => (
+                        {userPrefs?.issue_interests && userPrefs.issue_interests.length > 0 ? (
+                          userPrefs.issue_interests.slice(0, 3).map((interest) => (
                             <Badge key={interest} variant="secondary" className="text-xs">
                               {issueInterestLabels[interest] || interest}
                             </Badge>
@@ -260,8 +266,8 @@ const Dashboard = () => {
                         ) : (
                           <span className="text-muted-foreground text-xs">None selected</span>
                         )}
-                        {displayPrefs.issue_interests.length > 3 && (
-                          <Badge variant="outline" className="text-xs">+{displayPrefs.issue_interests.length - 3}</Badge>
+                        {userPrefs?.issue_interests && userPrefs.issue_interests.length > 3 && (
+                          <Badge variant="outline" className="text-xs">+{userPrefs.issue_interests.length - 3}</Badge>
                         )}
                       </div>
                     </div>
@@ -273,8 +279,8 @@ const Dashboard = () => {
                         <span>Project Types</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {displayPrefs.project_interests.length > 0 ? (
-                          displayPrefs.project_interests.slice(0, 3).map((interest) => (
+                        {userPrefs?.project_interests && userPrefs.project_interests.length > 0 ? (
+                          userPrefs.project_interests.slice(0, 3).map((interest) => (
                             <Badge key={interest} variant="secondary" className="text-xs">
                               {projectInterestLabels[interest] || interest}
                             </Badge>
@@ -282,8 +288,8 @@ const Dashboard = () => {
                         ) : (
                           <span className="text-muted-foreground text-xs">None selected</span>
                         )}
-                        {displayPrefs.project_interests.length > 3 && (
-                          <Badge variant="outline" className="text-xs">+{displayPrefs.project_interests.length - 3}</Badge>
+                        {userPrefs?.project_interests && userPrefs.project_interests.length > 3 && (
+                          <Badge variant="outline" className="text-xs">+{userPrefs.project_interests.length - 3}</Badge>
                         )}
                       </div>
                     </div>
@@ -366,15 +372,12 @@ const Dashboard = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="gap-2">
                   <ArrowUpDown className="w-4 h-4" />
-                  Sort: {sortBy === 'match' ? 'Match %' : sortBy === 'stars' ? 'Stars' : sortBy === 'issues' ? 'Issues' : 'Forks'}
+                  Sort: {sortBy === 'stars' ? 'Stars' : sortBy === 'issues' ? 'Issues' : 'Forks'}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Sort by</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setSortBy('match')}>
-                  Match % {sortBy === 'match' && '✓'}
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSortBy('stars')}>
                   Stars {sortBy === 'stars' && '✓'}
                 </DropdownMenuItem>

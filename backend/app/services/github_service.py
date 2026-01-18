@@ -27,11 +27,29 @@ class GitHubService:
 
     def _parse_repo_url(self, repo_url: str) -> tuple[str, str]:
         """Parse owner and repo from GitHub URL"""
-        parsed = urlparse(str(repo_url))
+        # Clean up the URL
+        repo_url = str(repo_url).strip()
+        
+        # Remove trailing slash
+        if repo_url.endswith("/"):
+            repo_url = repo_url[:-1]
+        
+        # Remove .git suffix if present
+        if repo_url.endswith(".git"):
+            repo_url = repo_url[:-4]
+        
+        parsed = urlparse(repo_url)
         path_parts = parsed.path.strip("/").split("/")
+        
         if len(path_parts) >= 2:
-            return path_parts[0], path_parts[1]
-        raise ValueError(f"Invalid GitHub repository URL: {repo_url}")
+            owner = path_parts[0]
+            repo = path_parts[1]
+            # Remove .git from repo name if still present
+            if repo.endswith(".git"):
+                repo = repo[:-4]
+            return owner, repo
+        
+        raise ValueError(f"Invalid GitHub repository URL: {repo_url}. Expected format: https://github.com/owner/repo")
 
     async def get_issues(
         self,
@@ -53,7 +71,7 @@ class GitHubService:
             # Join labels with comma (GitHub expects comma-separated)
             params["labels"] = ",".join(labels)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             try:
                 # Fetch repository info first to get language (language is repo-level, not issue-level)
                 repo_response = await client.get(
@@ -109,7 +127,7 @@ class GitHubService:
         """Get repository information"""
         owner, repo = self._parse_repo_url(repo_url)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.get(
                 f"{self.BASE_URL}/repos/{owner}/{repo}",
                 headers=self.headers,
@@ -137,7 +155,7 @@ class GitHubService:
 
     async def _get_label_issue_count(self, owner: str, repo: str, label: str) -> int:
         """Get count of issues with a specific label"""
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.get(
                 f"{self.BASE_URL}/repos/{owner}/{repo}/issues",
                 headers=self.headers,
@@ -190,7 +208,7 @@ class GitHubService:
 
         query = " ".join(query_parts) if query_parts else "stars:>=100"
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.get(
                 f"{self.BASE_URL}/search/repositories",
                 headers=self.headers,

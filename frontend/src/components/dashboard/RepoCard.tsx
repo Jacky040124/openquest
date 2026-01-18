@@ -1,22 +1,9 @@
+import { useNavigate } from 'react-router-dom';
 import { Star, GitFork, Circle, ExternalLink, AlertCircle, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { calculateRepoXP } from '@/store/levelingStore';
-
-interface Repo {
-  id: number;
-  name: string;
-  owner: string;
-  description: string;
-  stars: number;
-  forks: number;
-  language: string;
-  topics: string[];
-  issueCount: number;
-  matchScore: number;
-  goodFirstIssues: number;
-  xpReward?: number;
-}
+import type { RepoDTO } from '@/types/api';
 
 interface RepoCardProps {
   repo: RepoDTO;
@@ -54,7 +41,19 @@ const getMatchScoreColor = (score: number): string => {
 };
 
 const RepoCard = ({ repo }: RepoCardProps) => {
-  const xpReward = repo.xpReward ?? calculateRepoXP(repo);
+  const navigate = useNavigate();
+  // Parse owner from full_name (format: "owner/repo")
+  const [owner] = repo.full_name.split('/');
+  const xpReward = calculateRepoXP({
+    stars: repo.stars,
+    forks: 0, // RepoDTO doesn't have forks, using 0
+    issueCount: repo.open_issues_count,
+    goodFirstIssues: repo.good_first_issue_count,
+  });
+
+  const handleViewIssues = () => {
+    navigate(`/issues?repo_url=${encodeURIComponent(repo.url)}&repo_name=${encodeURIComponent(repo.full_name)}`);
+  };
 
   return (
     <div className="card-interactive p-5 group">
@@ -129,18 +128,13 @@ const RepoCard = ({ repo }: RepoCardProps) => {
           </div>
         </div>
 
-        {/* Match Score & XP */}
-        <div className="flex flex-col items-end gap-2">
-          <Badge
-            className={`text-sm font-semibold px-3 py-1 ${getMatchScoreColor(repo.matchScore)}`}
+        {/* Actions */}
+        <div className="flex flex-col items-end gap-3">
+          <Button 
+            size="sm" 
+            className="btn-primary text-sm"
+            onClick={handleViewIssues}
           >
-            {repo.matchScore}% match
-          </Badge>
-          <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/10 rounded-md border border-yellow-500/20">
-            <Zap className="w-3 h-3 text-yellow-400" />
-            <span className="text-xs font-semibold text-yellow-400">+{xpReward} XP</span>
-          </div>
-          <Button size="sm" className="btn-primary text-sm">
             View Issues
           </Button>
         </div>
