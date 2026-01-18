@@ -448,8 +448,8 @@ const Dashboard = () => {
               <div className="stat-label">matched repos</div>
             </div>
             <div className="stat-display">
-              <div className="stat-value">{totalGoodFirst}</div>
-              <div className="stat-label">good first issues</div>
+              <div className="stat-value">{formatLargeNumber(totalIssues)}</div>
+              <div className="stat-label">total issues</div>
             </div>
             <div className="stat-display">
               <div className="stat-value">{formatLargeNumber(totalStars)}</div>
