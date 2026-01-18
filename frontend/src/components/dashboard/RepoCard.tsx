@@ -1,6 +1,8 @@
-import { Star, Circle, ExternalLink, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Star, GitFork, Circle, ExternalLink, AlertCircle, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { calculateRepoXP } from '@/store/levelingStore';
 import type { RepoDTO } from '@/types/api';
 
 interface RepoCardProps {
@@ -32,12 +34,41 @@ const getLanguageColor = (language: string): string => {
   return colors[language] || 'hsl(var(--muted-foreground))';
 };
 
+const getMatchScoreColor = (score: number): string => {
+  if (score >= 85) return 'bg-green-500/20 text-green-400 border-green-500/30';
+  if (score >= 70) return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+  return 'bg-red-500/20 text-red-400 border-red-500/30';
+};
+
 const RepoCard = ({ repo }: RepoCardProps) => {
+  const navigate = useNavigate();
   // Parse owner from full_name (format: "owner/repo")
   const [owner] = repo.full_name.split('/');
+  const xpReward = calculateRepoXP({
+    stars: repo.stars,
+    forks: 0, // RepoDTO doesn't have forks, using 0
+    issueCount: repo.open_issues_count,
+    goodFirstIssues: repo.good_first_issue_count,
+  });
+
+  const handleViewIssues = () => {
+    navigate(`/issues?repo_url=${encodeURIComponent(repo.url)}&repo_name=${encodeURIComponent(repo.full_name)}`);
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on the GitHub link or the button
+    const target = e.target as HTMLElement;
+    if (target.closest('a[href]') || target.closest('button')) {
+      return;
+    }
+    handleViewIssues();
+  };
 
   return (
-    <div className="card-interactive p-5 group">
+    <div 
+      className="card-interactive p-5 group cursor-pointer"
+      onClick={handleCardClick}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           {/* Header */}
@@ -46,6 +77,7 @@ const RepoCard = ({ repo }: RepoCardProps) => {
               href={repo.url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-2 hover:text-primary transition-colors"
             >
               <span className="text-muted-foreground text-sm">{owner}/</span>
@@ -111,7 +143,14 @@ const RepoCard = ({ repo }: RepoCardProps) => {
 
         {/* Actions */}
         <div className="flex flex-col items-end gap-3">
-          <Button size="sm" className="btn-primary text-sm">
+          <Button 
+            size="sm" 
+            className="btn-primary text-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewIssues();
+            }}
+          >
             View Issues
           </Button>
         </div>

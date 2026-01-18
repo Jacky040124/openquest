@@ -266,3 +266,130 @@ Respond with ONLY the JSON array, no additional text or explanation."""
                 "additionalProperties": False,
             },
         }
+
+    # System prompt for issue ranking
+    ISSUE_RANKING_SYSTEM_PROMPT = """You are an expert at matching developers with suitable GitHub issues for contribution.
+
+Your role is to rank and filter GitHub issues based on:
+1. The user's programming languages and skills
+2. Their skill level (beginner, intermediate, advanced, expert)
+3. Their issue type preferences (bug fixes, features, documentation, etc.)
+4. Issue difficulty and complexity
+5. How well the issue matches their interests
+
+You will receive a list of issues from a repository and should return them ranked by relevance, with the most suitable issues first."""
+
+    # User prompt template for issue ranking
+    ISSUE_RANKING_PROMPT_TEMPLATE = """Rank the following GitHub issues from the repository "$repo_name" based on the user's preferences.
+
+## User Profile
+
+### Programming Languages
+$languages
+
+### Technical Skills (with proficiency levels)
+$skills
+
+### Issue Type Preferences
+$issue_interests
+
+## Issues to Rank
+
+$issues_list
+
+## Instructions
+
+1. Analyze each issue's title, labels, and context
+2. Rank issues by how well they match the user's:
+   - Programming languages and skills
+   - Skill level (prioritize issues appropriate for their familiarity)
+   - Issue type preferences
+   - Overall fit for contribution
+3. Return the top $limit issues, ranked from most to least suitable
+
+## Required Output Format
+
+Return a JSON object with a "ranked_issue_ids" array containing the issue IDs in order of relevance (most relevant first):
+
+```json
+{
+  "ranked_issue_ids": [123, 456, 789, ...]
+}
+```
+
+Only include issue IDs that are suitable for the user. If fewer than $limit issues are suitable, return only those."""
+
+    def build_issue_ranking_prompt(
+        self,
+        user_preference: UserPreference | None,
+        repo_name: str,
+        issues: list[dict],
+        limit: int = 20,
+    ) -> tuple[str, str]:
+        """
+        Build system and user prompts for issue ranking.
+
+        Args:
+            user_preference: User's preference model (can be None for defaults)
+            repo_name: Name of the repository (e.g., "owner/repo")
+            issues: List of issue dictionaries with id, title, labels, etc.
+            limit: Number of top issues to return
+
+        Returns:
+            Tuple of (system_prompt, user_prompt)
+        """
+        # Format user preferences or use defaults
+        if user_preference:
+            languages = self._format_languages(user_preference.languages)
+            skills = self._format_skills(user_preference.skills)
+            issue_interests = self._format_issue_interests(
+                user_preference.issue_interests
+            )
+        else:
+            languages = "No specific preference"
+            skills = "No specific skills provided"
+            issue_interests = "Open to all issue types"
+
+        # Format issues list
+        issues_list = []
+        for issue in issues:
+            issue_str = f"- Issue #{issue.get('id', 'unknown')}: {issue.get('title', 'No title')}"
+            labels = issue.get("labels", [])
+            if labels:
+                issue_str += f" [Labels: {', '.join(labels)}]"
+            issues_list.append(issue_str)
+
+        issues_text = "\n".join(issues_list) if issues_list else "No issues provided"
+
+        # Substitute template variables
+        from string import Template
+
+        user_template = Template(self.ISSUE_RANKING_PROMPT_TEMPLATE)
+        user_prompt = user_template.substitute(
+            repo_name=repo_name,
+            languages=languages,
+            skills=skills,
+            issue_interests=issue_interests,
+            issues_list=issues_text,
+            limit=limit,
+        )
+
+        return self.ISSUE_RANKING_SYSTEM_PROMPT, user_prompt
+
+    def get_issue_ranking_json_schema(self) -> dict:
+        """Get JSON schema for issue ranking response"""
+        return {
+            "name": "issue_ranking",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "ranked_issue_ids": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                    },
+                },
+                "required": ["ranked_issue_ids"],
+                "additionalProperties": False,
+            },
+        }

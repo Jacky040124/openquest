@@ -2,17 +2,35 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, field_validator
 
 
 class IssueFilterDTO(BaseModel):
     """Issue filter request parameters"""
 
-    repo_url: HttpUrl
+    repo_url: str
     tags: list[str] = ["good first issue", "help wanted"]
     languages: list[str] | None = None
     exclude_assigned: bool = True
     limit: int = 20
+
+    @field_validator("repo_url")
+    @classmethod
+    def validate_repo_url(cls, v: str) -> str:
+        """Validate and normalize repository URL"""
+        if not v:
+            raise ValueError("repo_url is required")
+
+        # Ensure URL has protocol
+        v = v.strip()
+        if not v.startswith(("http://", "https://")):
+            # If it's a GitHub URL without protocol, add https://
+            if "github.com" in v:
+                v = f"https://{v}" if not v.startswith("//") else f"https:{v}"
+            else:
+                v = f"https://{v}"
+
+        return v
 
 
 class IssueDTO(BaseModel):

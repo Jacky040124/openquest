@@ -2,12 +2,15 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from .config import get_settings
 from .controllers.agent_controller import router as agent_router
 from .controllers.auth_controller import router as auth_router
+from .controllers.contribution_controller import router as contribution_router
 from .controllers.github_oauth_controller import router as oauth_router
 from .controllers.issue_controller import router as issue_router
 from .controllers.repo_controller import router as repo_router
@@ -48,8 +51,47 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Add validation error handler for better error messages
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ):
+        """Handle validation errors with detailed messages"""
+        errors = []
+        for error in exc.errors():
+            field = " -> ".join(str(loc) for loc in error["loc"])
+            message = error["msg"]
+            error_type = error.get("type", "")
+
+            # Provide user-friendly error messages
+            if error_type == "value_error.email" or (
+                "email" in field.lower() and "value" in message.lower()
+            ):
+                message = "Invalid email format. Please use a valid email address (e.g., user@example.com)"
+            elif "required" in message.lower():
+                message = f"Field '{field}' is required"
+
+            errors.append(
+                {
+                    "field": field,
+                    "message": message,
+                    "type": error_type,
+                }
+            )
+
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={
+                "detail": "Validation error",
+                "errors": errors,
+                "message": "Please check your input. "
+                + "; ".join([f"{e['field']}: {e['message']}" for e in errors]),
+            },
+        )
+
     # Include routers
     app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(contribution_router, prefix="/api/v1")
     app.include_router(issue_router, prefix="/api/v1")
     app.include_router(repo_router, prefix="/api/v1")
     app.include_router(agent_router, prefix="/api/v1")

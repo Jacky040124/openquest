@@ -64,8 +64,8 @@ const Landing = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.6 }}
           >
-            Find Your Perfect
-            <span className="text-primary block mt-2">Open Source Match</span>
+            From <span className="font-black" style={{ color: '#6b6966' }}>Iron</span> to{' '}
+            <span className="font-black" style={{ color: '#f9ebc8', textShadow: '0 0 20px rgba(249, 235, 200, 0.8), 0 0 40px rgba(249, 235, 200, 0.5), 0 0 60px rgba(249, 235, 200, 0.3)' }}>Oracle</span>
           </motion.h1>
 
           <motion.p
@@ -74,8 +74,8 @@ const Landing = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
           >
-            Get personalized recommendations for open source projects based on your skills, 
-            interests, and the type of contributions you want to make.
+            Get personalized recommendations for open source projects tailored to your interests and skillset.
+            Contribute your way through the open source world and work your way to the top!
           </motion.p>
 
           <motion.div
@@ -121,14 +121,14 @@ const Landing = () => {
               <Users className="w-10 h-10 text-primary mb-4 mx-auto" />
               <h3 className="font-semibold text-foreground mb-2">Community Focus</h3>
               <p className="text-muted-foreground text-sm">
-                Find beginner-friendly projects with welcoming communities
+                Show off your skills and rise to the top all while contributing to the open source community
               </p>
             </div>
             <div className="p-6 rounded-2xl bg-card/50 backdrop-blur-sm border border-border">
               <Rocket className="w-10 h-10 text-primary mb-4 mx-auto" />
               <h3 className="font-semibold text-foreground mb-2">Start Contributing</h3>
               <p className="text-muted-foreground text-sm">
-                Jump into issues tagged for first-timers and grow your portfolio
+                Jump into issues for first-timers or experienced developers and strengthen your portfolio
               </p>
             </div>
           </motion.div>
@@ -138,7 +138,7 @@ const Landing = () => {
       {/* Footer */}
       <footer className="relative z-10 p-6 text-center">
         <p className="text-muted-foreground text-sm">
-          Built with ❤️ for the open source community
+          Built with love for the open source community
         </p>
       </footer>
     </div>

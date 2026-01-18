@@ -27,11 +27,31 @@ class GitHubService:
 
     def _parse_repo_url(self, repo_url: str) -> tuple[str, str]:
         """Parse owner and repo from GitHub URL"""
-        parsed = urlparse(str(repo_url))
+        # Clean up the URL
+        repo_url = str(repo_url).strip()
+
+        # Remove trailing slash
+        if repo_url.endswith("/"):
+            repo_url = repo_url[:-1]
+
+        # Remove .git suffix if present
+        if repo_url.endswith(".git"):
+            repo_url = repo_url[:-4]
+
+        parsed = urlparse(repo_url)
         path_parts = parsed.path.strip("/").split("/")
+
         if len(path_parts) >= 2:
-            return path_parts[0], path_parts[1]
-        raise ValueError(f"Invalid GitHub repository URL: {repo_url}")
+            owner = path_parts[0]
+            repo = path_parts[1]
+            # Remove .git from repo name if still present
+            if repo.endswith(".git"):
+                repo = repo[:-4]
+            return owner, repo
+
+        raise ValueError(
+            f"Invalid GitHub repository URL: {repo_url}. Expected format: https://github.com/owner/repo"
+        )
 
     async def get_issues(
         self,
@@ -39,6 +59,7 @@ class GitHubService:
         labels: list[str] | None = None,
         state: str = "open",
         per_page: int = 20,
+        page: int = 1,
     ) -> list[IssueDTO]:
         """Get issues from a repository"""
         owner, repo = self._parse_repo_url(repo_url)
@@ -46,6 +67,7 @@ class GitHubService:
         params = {
             "state": state,
             "per_page": per_page,
+            "page": page,
         }
         # GitHub API: multiple labels use AND logic (all must match)
         # If you want OR logic, we need to fetch all issues and filter client-side
@@ -53,7 +75,7 @@ class GitHubService:
             # Join labels with comma (GitHub expects comma-separated)
             params["labels"] = ",".join(labels)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             try:
                 # Fetch repository info first to get language (language is repo-level, not issue-level)
                 repo_response = await client.get(
@@ -111,7 +133,7 @@ class GitHubService:
         """Get repository information"""
         owner, repo = self._parse_repo_url(repo_url)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.get(
                 f"{self.BASE_URL}/repos/{owner}/{repo}",
                 headers=self.headers,
@@ -138,25 +160,51 @@ class GitHubService:
         )
 
     async def _get_label_issue_count(self, owner: str, repo: str, label: str) -> int:
-        """Get count of issues with a specific label"""
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{self.BASE_URL}/repos/{owner}/{repo}/issues",
-                headers=self.headers,
-                params={"labels": label, "state": "open", "per_page": 1},
-            )
-            response.raise_for_status()
+        """Get count of unassigned issues with a specific label"""
+        # Count unassigned issues with the label (matching what Issues page shows)
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            unassigned_count = 0
+            page = 1
+            per_page = 100
 
-        # Parse Link header for total count
-        link_header = response.headers.get("Link", "")
-        if "last" in link_header:
-            # Extract page number from last page link
-            import re
+            while True:
+                response = await client.get(
+                    f"{self.BASE_URL}/repos/{owner}/{repo}/issues",
+                    headers=self.headers,
+                    params={
+                        "labels": label,
+                        "state": "open",
+                        "per_page": per_page,
+                        "page": page,
+                    },
+                )
+                response.raise_for_status()
+                data = response.json()
 
-            match = re.search(r'page=(\d+)>; rel="last"', link_header)
-            if match:
-                return int(match.group(1))
-        return len(response.json())
+                # If no more issues, break
+                if not data:
+                    break
+
+                # Filter out pull requests and assigned issues
+                for item in data:
+                    # Skip pull requests
+                    if "pull_request" in item:
+                        continue
+                    # Count only unassigned issues
+                    if item.get("assignee") is None:
+                        unassigned_count += 1
+
+                # Check if there are more pages
+                link_header = response.headers.get("Link", "")
+                if 'rel="next"' not in link_header:
+                    break
+
+                page += 1
+                # Limit to first 10 pages (1000 issues max) for performance
+                if page > 10:
+                    break
+
+            return unassigned_count
 
     async def search_repos(
         self,
@@ -192,7 +240,7 @@ class GitHubService:
 
         query = " ".join(query_parts) if query_parts else "stars:>=100"
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.get(
                 f"{self.BASE_URL}/search/repositories",
                 headers=self.headers,

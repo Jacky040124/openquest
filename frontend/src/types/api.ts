@@ -197,3 +197,48 @@ export interface IssueFilterDTO {
   exclude_assigned?: boolean;
   limit?: number;
 }
+
+// ============================================
+// Contribution Analysis DTOs
+// ============================================
+
+export interface ContributionAnalysisQueryDTO {
+  repo_url: string;
+  days_back?: number;
+}
+
+export interface HeatmapDataDTO {
+  matrix: number[][];
+  contributors: string[];
+  modules: string[];
+  effort_scores: Array<Array<{
+    commits: number;
+    lines_changed: number;
+    effort_score: number;
+  }>>;
+}
+
+export interface NeglectedModuleDTO {
+  module: string;
+  days_since_last_activity: number;
+  total_contributions: number;
+}
+
+export interface ContributorSpecializationDTO {
+  module: string;
+  effort_share: number;
+  commits: number;
+  lines_changed: number;
+}
+
+export interface ContributionAnalysisDTO {
+  heatmap: HeatmapDataDTO;
+  neglected_modules: NeglectedModuleDTO[];
+  specializations: Record<string, ContributorSpecializationDTO[]>;
+  summary: {
+    total_contributions: number;
+    unique_contributors: number;
+    unique_modules: number;
+    analysis_period_days: number;
+  };
+}

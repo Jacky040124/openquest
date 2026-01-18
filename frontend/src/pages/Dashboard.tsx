@@ -1,14 +1,24 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, Search, Filter, RefreshCw, Code2, Wrench, Target, Folder, Edit2, Loader2 } from 'lucide-react';
+import { User, LogOut, Search, Filter, RefreshCw, Code2, Layers, Target, Folder, Edit2, ArrowUpDown, Loader2, Wrench } from 'lucide-react';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { useAuthStore } from '@/store/authStore';
+import { useLogout, useUserPreferences } from '@/hooks/useAuth';
 import { useRecommendations } from '@/hooks/useRepos';
-import { useUserPreferences, useLogout } from '@/hooks/useAuth';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 import RepoCard from '@/components/dashboard/RepoCard';
 import EditPreferencesDialog from '@/components/dashboard/EditPreferencesDialog';
 import SignOutDialog from '@/components/dashboard/SignOutDialog';
+import XPProgressBar from '@/components/dashboard/XPProgressBar';
+import ProfileLevelSection from '@/components/dashboard/ProfileLevelSection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -65,27 +75,40 @@ const Dashboard = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [showEditPreferences, setShowEditPreferences] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+  const [sortBy, setSortBy] = useState<'stars' | 'issues' | 'forks'>('stars');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoggedIn) {
-      navigate('/login');
-    }
-  }, [isLoggedIn, navigate]);
+  const filteredAndSortedRepos = useMemo(() => {
+    if (!repos) return [];
+    
+    const filtered = repos.filter(repo =>
+      repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (repo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+      repo.topics.some(topic => topic.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
-  // Use server preferences if available, otherwise use local store
-  const displayPrefs = userPrefs || {
-    languages: preferences.languages,
-    skills: preferences.skills,
-    issue_interests: preferences.issue_interests,
-    project_interests: preferences.project_interests,
-  };
+    return filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'stars':
+          comparison = a.stars - b.stars;
+          break;
+        case 'issues':
+          comparison = a.open_issues_count - b.open_issues_count;
+          break;
+        case 'forks':
+          // RepoDTO doesn't have forks, use stars as fallback
+          comparison = a.stars - b.stars;
+          break;
+        default:
+          // Default sort by stars
+          comparison = a.stars - b.stars;
+          break;
+      }
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+  }, [repos, searchQuery, sortBy, sortOrder]);
 
-  const filteredRepos = repos?.filter(repo =>
-    repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    repo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    repo.topics.some(topic => topic.toLowerCase().includes(searchQuery.toLowerCase()))
-  ) || [];
 
   const handleLogoClick = () => {
     if (isLoggedIn) {
@@ -129,7 +152,7 @@ const Dashboard = () => {
       </div>
 
       {/* Header */}
-      <header className="relative z-10 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0">
+      <header className="relative z-50 border-b border-border bg-background sticky top-0">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <motion.div
             className="flex items-center gap-2 cursor-pointer"
@@ -139,6 +162,15 @@ const Dashboard = () => {
           >
             <img src={logo} alt="OpenQuest" className="w-8 h-8 object-contain" />
             <span className="font-semibold text-lg text-foreground">OpenQuest</span>
+          </motion.div>
+
+          {/* XP Progress Bar - Center */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <XPProgressBar />
           </motion.div>
 
           <div className="flex items-center gap-2">
@@ -155,7 +187,7 @@ const Dashboard = () => {
               <PopoverContent align="end" className="w-80 p-0">
                 <div className="p-4">
                   {/* Profile Header */}
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-3 mb-3">
                     <div className="w-12 h-12 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center">
                       <User className="w-6 h-6 text-primary" />
                     </div>
@@ -167,7 +199,10 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  <Separator className="mb-4" />
+                  {/* Level & Badge Section */}
+                  <ProfileLevelSection />
+
+                  <Separator className="my-4" />
 
                   {/* Preferences Summary */}
                   <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -178,8 +213,8 @@ const Dashboard = () => {
                         <span>Languages</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {displayPrefs.languages.length > 0 ? (
-                          displayPrefs.languages.slice(0, 4).map((lang) => (
+                        {userPrefs?.languages && userPrefs.languages.length > 0 ? (
+                          userPrefs.languages.slice(0, 4).map((lang) => (
                             <Badge key={lang} variant="secondary" className="text-xs">
                               {lang}
                             </Badge>
@@ -187,8 +222,8 @@ const Dashboard = () => {
                         ) : (
                           <span className="text-muted-foreground text-xs">None selected</span>
                         )}
-                        {displayPrefs.languages.length > 4 && (
-                          <Badge variant="outline" className="text-xs">+{displayPrefs.languages.length - 4}</Badge>
+                        {userPrefs?.languages && userPrefs.languages.length > 4 && (
+                          <Badge variant="outline" className="text-xs">+{userPrefs.languages.length - 4}</Badge>
                         )}
                       </div>
                     </div>
@@ -200,8 +235,8 @@ const Dashboard = () => {
                         <span>Skills</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {displayPrefs.skills.length > 0 ? (
-                          displayPrefs.skills.slice(0, 4).map((skill) => (
+                        {userPrefs?.skills && userPrefs.skills.length > 0 ? (
+                          userPrefs.skills.slice(0, 4).map((skill) => (
                             <Badge key={skill.name} variant="secondary" className="text-xs capitalize">
                               {skill.name}
                             </Badge>
@@ -209,8 +244,8 @@ const Dashboard = () => {
                         ) : (
                           <span className="text-muted-foreground text-xs">None selected</span>
                         )}
-                        {displayPrefs.skills.length > 4 && (
-                          <Badge variant="outline" className="text-xs">+{displayPrefs.skills.length - 4}</Badge>
+                        {userPrefs?.skills && userPrefs.skills.length > 4 && (
+                          <Badge variant="outline" className="text-xs">+{userPrefs.skills.length - 4}</Badge>
                         )}
                       </div>
                     </div>
@@ -222,8 +257,8 @@ const Dashboard = () => {
                         <span>Issue Types</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {displayPrefs.issue_interests.length > 0 ? (
-                          displayPrefs.issue_interests.slice(0, 3).map((interest) => (
+                        {userPrefs?.issue_interests && userPrefs.issue_interests.length > 0 ? (
+                          userPrefs.issue_interests.slice(0, 3).map((interest) => (
                             <Badge key={interest} variant="secondary" className="text-xs">
                               {issueInterestLabels[interest] || interest}
                             </Badge>
@@ -231,8 +266,8 @@ const Dashboard = () => {
                         ) : (
                           <span className="text-muted-foreground text-xs">None selected</span>
                         )}
-                        {displayPrefs.issue_interests.length > 3 && (
-                          <Badge variant="outline" className="text-xs">+{displayPrefs.issue_interests.length - 3}</Badge>
+                        {userPrefs?.issue_interests && userPrefs.issue_interests.length > 3 && (
+                          <Badge variant="outline" className="text-xs">+{userPrefs.issue_interests.length - 3}</Badge>
                         )}
                       </div>
                     </div>
@@ -244,8 +279,8 @@ const Dashboard = () => {
                         <span>Project Types</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {displayPrefs.project_interests.length > 0 ? (
-                          displayPrefs.project_interests.slice(0, 3).map((interest) => (
+                        {userPrefs?.project_interests && userPrefs.project_interests.length > 0 ? (
+                          userPrefs.project_interests.slice(0, 3).map((interest) => (
                             <Badge key={interest} variant="secondary" className="text-xs">
                               {projectInterestLabels[interest] || interest}
                             </Badge>
@@ -253,8 +288,8 @@ const Dashboard = () => {
                         ) : (
                           <span className="text-muted-foreground text-xs">None selected</span>
                         )}
-                        {displayPrefs.project_interests.length > 3 && (
-                          <Badge variant="outline" className="text-xs">+{displayPrefs.project_interests.length - 3}</Badge>
+                        {userPrefs?.project_interests && userPrefs.project_interests.length > 3 && (
+                          <Badge variant="outline" className="text-xs">+{userPrefs.project_interests.length - 3}</Badge>
                         )}
                       </div>
                     </div>
@@ -333,21 +368,33 @@ const Dashboard = () => {
                 className="pl-10 bg-card border-border"
               />
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <ArrowUpDown className="w-4 h-4" />
+                  Sort: {sortBy === 'stars' ? 'Stars' : sortBy === 'issues' ? 'Issues' : 'Forks'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setSortBy('stars')}>
+                  Stars {sortBy === 'stars' && '✓'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy('issues')}>
+                  Good First Issues {sortBy === 'issues' && '✓'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy('forks')}>
+                  Forks {sortBy === 'forks' && '✓'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}>
+                  {sortOrder === 'desc' ? '↓ Descending' : '↑ Ascending'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" className="gap-2">
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={handleRefresh}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
+              <RefreshCw className="w-4 h-4" />
               Refresh
             </Button>
           </motion.div>
@@ -371,27 +418,25 @@ const Dashboard = () => {
           )}
 
           {/* Repo Grid */}
-          {!isLoading && !error && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="grid gap-4"
-            >
-              {filteredRepos.map((repo, index) => (
-                <motion.div
-                  key={repo.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                >
-                  <RepoCard repo={repo} />
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="grid gap-4"
+          >
+            {filteredAndSortedRepos.map((repo, index) => (
+              <motion.div
+                key={repo.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 * index }}
+              >
+                <RepoCard repo={repo} />
+              </motion.div>
+            ))}
+          </motion.div>
 
-          {!isLoading && !error && filteredRepos.length === 0 && (
+          {filteredAndSortedRepos.length === 0 && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">
                 {searchQuery

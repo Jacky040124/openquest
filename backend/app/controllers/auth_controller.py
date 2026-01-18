@@ -1,5 +1,7 @@
 """Authentication Controller - /auth/* Routes"""
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -13,6 +15,7 @@ from ..dto.user_dto import (
 from ..services.auth_service import AuthService
 from ..utils.dependencies import CurrentUser, SupabaseClient
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 security = HTTPBearer()
 
@@ -21,13 +24,28 @@ security = HTTPBearer()
     "/register", response_model=UserResponseDTO, status_code=status.HTTP_201_CREATED
 )
 async def register(data: RegisterDTO, supabase: SupabaseClient) -> UserResponseDTO:
-    """Register a new user"""
+    """
+    Register a new user.
+
+    **Request body:**
+    - **email**: Valid email address (required)
+    - **password**: Password string (required, minimum 6 characters)
+
+    **Note:** If email confirmation is enabled in Supabase, the user will need to
+    confirm their email before they can log in.
+    """
     try:
         auth_service = AuthService(supabase)
         return auth_service.register(data)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        # Validation errors (password too short, email already exists, etc.)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
     except Exception as e:
+        # Log the full error for debugging
+        logger.error(f"Registration error: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Registration failed: {str(e)}",
