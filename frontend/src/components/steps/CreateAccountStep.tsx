@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { useRegister, useLogin, useCreatePreferences } from '@/hooks/useAuth';
-import { Mail, Lock, Eye, EyeOff, UserPlus, Loader2, User } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Mail, Lock, Eye, EyeOff, Loader2, User, ArrowRight } from 'lucide-react';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CREATE ACCOUNT STEP - E2B INDUSTRIAL AESTHETIC
+// Terminal windows, ASCII art, orange accents, monospace typography
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const CreateAccountStep = () => {
   const navigate = useNavigate();
@@ -99,167 +101,248 @@ const CreateAccountStep = () => {
   return (
     <motion.div
       className="max-w-md mx-auto"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.4 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
     >
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* HEADER */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
       <div className="text-center mb-8">
         <motion.div
-          className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="inline-flex items-center gap-3 mb-6"
         >
-          <UserPlus className="w-8 h-8 text-primary" />
+          <span className="text-white/30 tracking-[0.3em] text-xs">✶✶✶</span>
+          <span className="text-[11px] text-white/50 tracking-[0.3em] uppercase">FINAL STEP</span>
+          <span className="text-white/30 tracking-[0.3em] text-xs">✶✶✶</span>
         </motion.div>
-        <h2 className="text-3xl font-bold mb-3">Create Your Account</h2>
-        <p className="text-muted-foreground">
+
+        <motion.h1
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-3xl md:text-4xl font-bold tracking-tight mb-3"
+          style={{ fontFamily: "'JetBrains Mono', 'SF Mono', Monaco, monospace" }}
+        >
+          CREATE YOUR <span className="text-[#FF6B00]">ACCOUNT</span>
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-white/50 text-sm tracking-wide"
+          style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+        >
           Set up your credentials to save your preferences
-        </p>
+        </motion.p>
       </div>
 
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* TERMINAL-STYLE FORM */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
       <motion.div
-        className="card-interactive p-6 space-y-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="bg-black border border-white/10"
       >
-        {displayError && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm text-center"
-          >
-            {displayError}
-          </motion.div>
-        )}
-
-        <div className="space-y-2">
-          <Label htmlFor="username" className="flex items-center gap-2">
-            <User className="w-4 h-4" />
-            Username
-          </Label>
-          <Input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(e) => {
-              setUsername(e.target.value);
-              setLocalError('');
-              setError(null);
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder="Choose a username"
-            className="bg-background"
-            disabled={isLoading}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="email" className="flex items-center gap-2">
-            <Mail className="w-4 h-4" />
-            Email
-          </Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setLocalError('');
-              setError(null);
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter your email"
-            className="bg-background"
-            disabled={isLoading}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="password" className="flex items-center gap-2">
-            <Lock className="w-4 h-4" />
-            Password
-          </Label>
-          <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setLocalError('');
-                setError(null);
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder="Create a password"
-              className="bg-background pr-10"
-              disabled={isLoading}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              disabled={isLoading}
-            >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
+        {/* Terminal Header */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/[0.02]">
+          <div className="flex gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#FF6B00]/60" />
+            <div className="w-2.5 h-2.5 rounded-full bg-white/20" />
+            <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <span className="text-[10px] text-white/40 tracking-[0.2em]">━━━━━━</span>
+            <span className="text-[10px] text-white/60 tracking-widest mx-3 font-bold">REGISTER</span>
+            <span className="text-[10px] text-white/40 tracking-[0.2em]">━━━━━━</span>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword" className="flex items-center gap-2">
-            <Lock className="w-4 h-4" />
-            Confirm Password
-          </Label>
-          <div className="relative">
-            <Input
-              id="confirmPassword"
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value);
-                setLocalError('');
-                setError(null);
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder="Confirm your password"
-              className="bg-background pr-10"
-              disabled={isLoading}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              disabled={isLoading}
+        {/* Form Content */}
+        <div className="p-6 space-y-5">
+          {/* Error message */}
+          {displayError && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 border border-red-500/30 bg-red-500/5 text-red-400 text-sm font-mono"
             >
-              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-
-        <Button
-          onClick={handleCreateAccount}
-          className="w-full"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating account...
-            </>
-          ) : (
-            <>
-              <UserPlus className="w-4 h-4 mr-2" />
-              Create Account & Continue
-            </>
+              <div className="flex items-center gap-2">
+                <span className="text-red-500">▸</span>
+                <span>ERROR:</span>
+              </div>
+              <div className="mt-1 pl-4 text-red-400/80">{displayError}</div>
+            </motion.div>
           )}
-        </Button>
 
-        <p className="text-xs text-muted-foreground text-center">
-          By creating an account, you'll be able to save your preferences and track your contributions.
-        </p>
+          {/* Username Field */}
+          <div className="space-y-2">
+            <label htmlFor="username" className="text-[11px] font-medium text-white/60 tracking-widest uppercase flex items-center gap-2">
+              <User className="w-3 h-3" />
+              USERNAME
+            </label>
+            <div className="relative">
+              <input
+                id="username"
+                type="text"
+                placeholder="your_username"
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  setLocalError('');
+                  setError(null);
+                }}
+                onKeyDown={handleKeyDown}
+                className="w-full bg-white/[0.02] border border-white/10 px-4 py-3 text-white placeholder-white/30
+                           focus:outline-none focus:border-[#FF6B00]/50 focus:bg-[#FF6B00]/5
+                           transition-all duration-200 font-mono text-sm tracking-wide"
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          {/* Email Field */}
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-[11px] font-medium text-white/60 tracking-widest uppercase flex items-center gap-2">
+              <Mail className="w-3 h-3" />
+              EMAIL ADDRESS
+            </label>
+            <div className="relative">
+              <input
+                id="email"
+                type="email"
+                placeholder="user@example.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setLocalError('');
+                  setError(null);
+                }}
+                onKeyDown={handleKeyDown}
+                className="w-full bg-white/[0.02] border border-white/10 px-4 py-3 text-white placeholder-white/30
+                           focus:outline-none focus:border-[#FF6B00]/50 focus:bg-[#FF6B00]/5
+                           transition-all duration-200 font-mono text-sm tracking-wide"
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          {/* Password Field */}
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-[11px] font-medium text-white/60 tracking-widest uppercase flex items-center gap-2">
+              <Lock className="w-3 h-3" />
+              PASSWORD
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••••••"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setLocalError('');
+                  setError(null);
+                }}
+                onKeyDown={handleKeyDown}
+                className="w-full bg-white/[0.02] border border-white/10 px-4 py-3 pr-12 text-white placeholder-white/30
+                           focus:outline-none focus:border-[#FF6B00]/50 focus:bg-[#FF6B00]/5
+                           transition-all duration-200 font-mono text-sm tracking-wide"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                disabled={isLoading}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password Field */}
+          <div className="space-y-2">
+            <label htmlFor="confirmPassword" className="text-[11px] font-medium text-white/60 tracking-widest uppercase flex items-center gap-2">
+              <Lock className="w-3 h-3" />
+              CONFIRM PASSWORD
+            </label>
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="••••••••••••"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setLocalError('');
+                  setError(null);
+                }}
+                onKeyDown={handleKeyDown}
+                className="w-full bg-white/[0.02] border border-white/10 px-4 py-3 pr-12 text-white placeholder-white/30
+                           focus:outline-none focus:border-[#FF6B00]/50 focus:bg-[#FF6B00]/5
+                           transition-all duration-200 font-mono text-sm tracking-wide"
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                disabled={isLoading}
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            onClick={handleCreateAccount}
+            disabled={isLoading}
+            className="w-full bg-[#FF6B00] text-black py-4 text-sm tracking-[0.2em] uppercase font-bold
+                       hover:bg-[#FF8533] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed
+                       flex items-center justify-center gap-2 mt-6"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>CREATING ACCOUNT...</span>
+              </>
+            ) : (
+              <>
+                <span>CREATE ACCOUNT</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+
+          {/* Terms Text */}
+          <p className="text-[10px] text-white/30 text-center leading-relaxed mt-4">
+            By creating an account, you'll be able to save your preferences
+            <br />and track your contributions across open source projects.
+          </p>
+        </div>
+      </motion.div>
+
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      {/* ASCII DECORATION */}
+      {/* ════════════════════════════════════════════════════════════════════════ */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.3 }}
+        transition={{ delay: 0.6 }}
+        className="mt-8 text-center font-mono text-[10px] text-white/20"
+      >
+        ┌────────────────────────────────────┐<br />
+        │&nbsp;&nbsp;SECURE CONNECTION ESTABLISHED&nbsp;&nbsp;│<br />
+        └────────────────────────────────────┘
       </motion.div>
     </motion.div>
   );

@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     e2b_sandbox_timeout: int = 600  # 10 minutes
 
     # Agent Configuration
-    agent_max_turns: int = 25
+    agent_max_turns: int = 10
     agent_max_tokens_per_tool: int = 8000
 
     @property
