@@ -18,6 +18,55 @@ logger = logging.getLogger(__name__)
 class RepoService:
     """Service for repository recommendation based on user preferences using LLM"""
 
+    # Repositories to exclude (curated lists, educational resources, etc.)
+    EXCLUDED_REPO_PATTERNS = [
+        "awesome-",
+        "free-programming-books",
+        "coding-interview",
+        "interview-",
+        "-interview",
+        "developer-roadmap",
+        "roadmap",
+        "public-apis",
+        "build-your-own",
+        "cheatsheet",
+        "cheat-sheet",
+        "learn-",
+        "-tutorial",
+        "tutorials",
+        "996.icu",
+        "system-design-primer",
+        "the-art-of",
+        "the-book-of",
+        "cs-notes",
+        "tech-interview",
+        "leetcode",
+        "algorithm-",
+        "-algorithms",
+        "design-patterns",
+    ]
+
+    # Topics that indicate non-code repositories
+    EXCLUDED_TOPICS = [
+        "awesome-list",
+        "awesome",
+        "list",
+        "curated-list",
+        "resource",
+        "resources",
+        "learning",
+        "tutorial",
+        "tutorials",
+        "education",
+        "educational",
+        "interview",
+        "interview-questions",
+        "cheatsheet",
+        "roadmap",
+        "books",
+        "free-books",
+    ]
+
     def __init__(
         self,
         github_service: GitHubService,
@@ -30,6 +79,66 @@ class RepoService:
         self.user_preference_dao = UserPreferenceDAO(supabase)
         self.openrouter_service = openrouter_service
         self.prompt_service = prompt_service or PromptService()
+
+    def _is_excluded_repo(self, repo: RepoDTO) -> bool:
+        """
+        Check if a repository should be excluded (curated lists, educational resources, etc.)
+
+        Args:
+            repo: Repository to check
+
+        Returns:
+            True if the repository should be excluded
+        """
+        repo_name_lower = repo.name.lower()
+        full_name_lower = repo.full_name.lower()
+
+        # Check against excluded name patterns
+        for pattern in self.EXCLUDED_REPO_PATTERNS:
+            if pattern in repo_name_lower or pattern in full_name_lower:
+                logger.debug(
+                    f"Excluding repo {repo.full_name} - matches pattern: {pattern}"
+                )
+                return True
+
+        # Check against excluded topics
+        if repo.topics:
+            repo_topics_lower = [t.lower() for t in repo.topics]
+            for excluded_topic in self.EXCLUDED_TOPICS:
+                if excluded_topic in repo_topics_lower:
+                    logger.debug(
+                        f"Excluding repo {repo.full_name} - has excluded topic: {excluded_topic}"
+                    )
+                    return True
+
+        # Check if repo is primarily Markdown (likely a list/docs repo)
+        if repo.language and repo.language.lower() in [
+            "markdown",
+            "restructuredtext",
+            "asciidoc",
+        ]:
+            logger.debug(
+                f"Excluding repo {repo.full_name} - primary language is {repo.language}"
+            )
+            return True
+
+        return False
+
+    def _filter_excluded_repos(self, repos: list[RepoDTO]) -> list[RepoDTO]:
+        """
+        Filter out excluded repositories from a list.
+
+        Args:
+            repos: List of repositories to filter
+
+        Returns:
+            Filtered list of repositories
+        """
+        filtered = [repo for repo in repos if not self._is_excluded_repo(repo)]
+        excluded_count = len(repos) - len(filtered)
+        if excluded_count > 0:
+            logger.info(f"Filtered out {excluded_count} non-code repositories")
+        return filtered
 
     async def recommend_repos(
         self,
@@ -56,29 +165,39 @@ class RepoService:
         min_stars = query.min_stars if query else 100
         max_stars = query.max_stars if query else None
 
+        # Request more repos to account for filtering
+        fetch_limit = limit * 3
+
         # Try LLM-based recommendations first
         if self.openrouter_service:
             try:
                 repos = await self._get_llm_recommendations(
                     user_preference=user_preference,
-                    limit=limit,
+                    limit=fetch_limit,
                     min_stars=min_stars,
                     max_stars=max_stars,
                 )
                 if repos:
-                    return repos
+                    # Filter out non-code repositories
+                    repos = self._filter_excluded_repos(repos)
+                    if repos:
+                        return repos[:limit]
             except Exception as e:
                 logger.warning(
                     f"LLM recommendation failed, falling back to GitHub API: {e}"
                 )
 
         # Fallback to GitHub API search
-        return await self._get_github_recommendations(
+        repos = await self._get_github_recommendations(
             user_preference=user_preference,
-            limit=limit,
+            limit=fetch_limit,
             min_stars=min_stars,
             max_stars=max_stars,
         )
+
+        # Filter out non-code repositories
+        repos = self._filter_excluded_repos(repos)
+        return repos[:limit]
 
     async def _get_llm_recommendations(
         self,

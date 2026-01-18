@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, LogOut, Search, RefreshCw, Code2, Target, Folder, Edit2, ArrowUpDown, Loader2, Wrench, Trophy, Github, CheckCircle2, Link, Terminal, Star, GitFork, Zap, ChevronRight, Command, Box } from 'lucide-react';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { useAuthStore } from '@/store/authStore';
-import { useLogout, useUserPreferences } from '@/hooks/useAuth';
+import { useLogout, useUserPreferences, useVerifyAuth } from '@/hooks/useAuth';
 import { useRecommendations } from '@/hooks/useRepos';
 import { useGitHubStatus, useGitHubAuthorize, useDisconnectGitHub } from '@/hooks/useGitHubOAuth';
 import { useState, useMemo, useEffect } from 'react';
@@ -82,8 +82,15 @@ const Dashboard = () => {
   const { preferences, resetPreferences } = usePreferencesStore();
   const { isLoggedIn, user } = useAuthStore();
   const { mutate: logout } = useLogout();
+
+  // Verify auth token on mount - will redirect to login if invalid
+  // Also fetches user preferences together with auth verification
+  const { isVerifying, isAuthenticated, preferences: verifiedPrefs } = useVerifyAuth();
+
   const { data: repos, isLoading, error, refetch } = useRecommendations({ limit: 10 });
-  const { data: userPrefs } = useUserPreferences();
+  // Use preferences from useVerifyAuth, fallback to useUserPreferences for updates
+  const { data: queryPrefs } = useUserPreferences();
+  const userPrefs = queryPrefs || verifiedPrefs;
   const { data: githubStatus, isLoading: isLoadingGithub } = useGitHubStatus();
   const githubAuthorize = useGitHubAuthorize();
   const disconnectGitHub = useDisconnectGitHub();
@@ -135,8 +142,20 @@ const Dashboard = () => {
     }
   }, [isLoggedIn, navigate]);
 
+  // Show loading while verifying auth token
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground font-mono text-sm">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Don't render if not authenticated
-  if (!isLoggedIn) {
+  if (!isLoggedIn || !isAuthenticated) {
     return null;
   }
 
@@ -168,7 +187,7 @@ const Dashboard = () => {
     refetch();
   };
 
-  // Calculate stats
+  // Calculate stats (show 0 during loading, only show real data after loaded)
   const totalStars = repos?.reduce((sum, r) => sum + r.stars, 0) || 0;
   const totalIssues = repos?.reduce((sum, r) => sum + r.open_issues_count, 0) || 0;
   const totalGoodFirst = repos?.reduce((sum, r) => sum + r.good_first_issue_count, 0) || 0;

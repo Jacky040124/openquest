@@ -16,7 +16,15 @@ const GitHubCallback = () => {
 
   // Helper to redirect based on login state
   const redirectWithError = (errorType: string) => {
-    if (isLoggedIn) {
+    // Check if there's a stored return URL
+    const returnUrl = localStorage.getItem('github_oauth_return_url');
+    localStorage.removeItem('github_oauth_return_url');
+
+    if (returnUrl && isLoggedIn) {
+      // Redirect back to where user came from with error param
+      const separator = returnUrl.includes('?') ? '&' : '?';
+      navigate(`${returnUrl}${separator}github_error=${errorType}`);
+    } else if (isLoggedIn) {
       // Logged in users go back to dashboard (they can try again from there)
       navigate('/dashboard');
     } else {
@@ -49,9 +57,16 @@ const GitHubCallback = () => {
   // Redirect on success
   useEffect(() => {
     if (githubCallback.isSuccess && githubCallback.data) {
-      const { username, isLoggedIn } = githubCallback.data;
+      const { username, isLoggedIn: userLoggedIn } = githubCallback.data;
 
-      if (isLoggedIn) {
+      // Check if there's a stored return URL
+      const returnUrl = localStorage.getItem('github_oauth_return_url');
+      localStorage.removeItem('github_oauth_return_url');
+
+      if (returnUrl && userLoggedIn) {
+        // Redirect back to where user came from (e.g., issue analysis page)
+        navigate(returnUrl);
+      } else if (userLoggedIn) {
         // User is logged in - redirect to dashboard
         navigate('/dashboard');
       } else {

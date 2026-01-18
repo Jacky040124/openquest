@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     supabase_url: str | None = None
     supabase_key: str | None = None
     supabase_jwt_secret: str | None = None
+    supabase_service_role_key: str | None = None
 
     # Database
     database_url: str | None = None
@@ -39,14 +40,14 @@ class Settings(BaseSettings):
 
     # OpenRouter LLM
     openrouter_api_key: str | None = None
-    openrouter_model: str = "anthropic/claude-sonnet-4.5"
+    openrouter_model: str = "anthropic/claude-3.5-sonnet"
 
     # E2B Sandbox
     e2b_api_key: str | None = None
     e2b_sandbox_timeout: int = 600  # 10 minutes
 
     # Agent Configuration
-    agent_max_turns: int = 10
+    agent_max_turns: int = 5
     agent_max_tokens_per_tool: int = 8000
 
     @property

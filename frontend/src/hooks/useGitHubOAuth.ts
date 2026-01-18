@@ -16,10 +16,15 @@ export const useGitHubStatus = () => {
 
 /**
  * Hook to initiate GitHub OAuth authorization
+ * Stores the current URL so we can redirect back after OAuth completes
  */
 export const useGitHubAuthorize = () => {
   return useMutation({
     mutationFn: async () => {
+      // Store current location to redirect back after OAuth
+      const returnUrl = window.location.pathname + window.location.search;
+      localStorage.setItem('github_oauth_return_url', returnUrl);
+
       const response = await api.get<GitHubAuthorizeResponse>('/oauth/github/authorize');
       // Redirect to GitHub OAuth page
       window.location.href = response.authorize_url;

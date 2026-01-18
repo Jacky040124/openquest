@@ -292,6 +292,21 @@ export interface GitHubStatusDTO {
 }
 
 // ============================================
+// Fork DTOs
+// ============================================
+
+export interface ForkStatusDTO {
+  has_fork: boolean;
+  fork_url: string | null;
+  fork_full_name: string | null;
+}
+
+export interface ForkCreateDTO {
+  fork_url: string;
+  fork_full_name: string;
+}
+
+// ============================================
 // Agent DTOs
 // ============================================
 

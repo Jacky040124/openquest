@@ -221,6 +221,11 @@ class GitHubService:
 
         Note: GitHub API uses OR logic for multiple language filters.
         If languages=['Python', 'JavaScript'], it returns repos in Python OR JavaScript.
+
+        Note: has_good_first_issues is kept for API compatibility but does not filter
+        results at search time. The label: filter only works for /search/issues API,
+        not /search/repositories. We rely on good_first_issue_count being fetched
+        separately for display purposes.
         """
         query_parts = []
 
@@ -240,9 +245,11 @@ class GitHubService:
         else:
             query_parts.append(f"stars:>={min_stars}")
 
-        # Add good first issues label filter
-        if has_good_first_issues:
-            query_parts.append('label:"good first issue"')
+        # Note: label: filter does NOT work for /search/repositories API
+        # It only works for /search/issues. The has_good_first_issues parameter
+        # is kept for API compatibility but we rely on good_first_issue_count
+        # being populated separately for each repo (shown on cards).
+        # Popular repos typically have good first issues available.
 
         query = " ".join(query_parts) if query_parts else "stars:>=100"
 
@@ -287,3 +294,142 @@ class GitHubService:
             )
 
         return repos
+
+    async def check_user_fork(
+        self,
+        repo_url: str,
+        user_token: str,
+    ) -> dict:
+        """
+        Check if the authenticated user has forked a repository.
+
+        Args:
+            repo_url: URL of the repository to check
+            user_token: GitHub OAuth token of the current user
+
+        Returns:
+            Dictionary with fork status:
+            {
+                "has_fork": bool,
+                "fork_url": str | None,
+                "fork_full_name": str | None
+            }
+        """
+        owner, repo = self._parse_repo_url(repo_url)
+
+        # Use user's token for this request
+        headers = {
+            **self.headers,
+            "Authorization": f"Bearer {user_token}",
+        }
+
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            try:
+                # First, get the authenticated user's username
+                user_response = await client.get(
+                    f"{self.BASE_URL}/user",
+                    headers=headers,
+                    timeout=30.0,
+                )
+                user_response.raise_for_status()
+                username = user_response.json().get("login")
+
+                if not username:
+                    return {"has_fork": False, "fork_url": None, "fork_full_name": None}
+
+                # Check if user has a fork of this repo
+                # The fork would be at github.com/{username}/{repo}
+                fork_response = await client.get(
+                    f"{self.BASE_URL}/repos/{username}/{repo}",
+                    headers=headers,
+                    timeout=30.0,
+                )
+
+                if fork_response.status_code == 200:
+                    fork_data = fork_response.json()
+                    # Verify it's actually a fork of the original repo
+                    if (
+                        fork_data.get("fork")
+                        and fork_data.get("parent", {}).get("full_name")
+                        == f"{owner}/{repo}"
+                    ):
+                        return {
+                            "has_fork": True,
+                            "fork_url": fork_data.get("html_url"),
+                            "fork_full_name": fork_data.get("full_name"),
+                        }
+
+                # Also check forks list in case the fork has a different name
+                forks_response = await client.get(
+                    f"{self.BASE_URL}/repos/{owner}/{repo}/forks",
+                    headers=headers,
+                    params={"per_page": 100},
+                    timeout=30.0,
+                )
+
+                if forks_response.status_code == 200:
+                    forks_data = forks_response.json()
+                    for fork in forks_data:
+                        if fork.get("owner", {}).get("login") == username:
+                            return {
+                                "has_fork": True,
+                                "fork_url": fork.get("html_url"),
+                                "fork_full_name": fork.get("full_name"),
+                            }
+
+                return {"has_fork": False, "fork_url": None, "fork_full_name": None}
+
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    return {"has_fork": False, "fork_url": None, "fork_full_name": None}
+                raise ValueError(f"GitHub API error: {e.response.status_code}")
+            except Exception as e:
+                raise ValueError(f"Failed to check fork status: {str(e)}")
+
+    async def create_fork(
+        self,
+        repo_url: str,
+        user_token: str,
+    ) -> dict:
+        """
+        Create a fork of a repository for the authenticated user.
+
+        Args:
+            repo_url: URL of the repository to fork
+            user_token: GitHub OAuth token of the current user
+
+        Returns:
+            Dictionary with fork info:
+            {
+                "fork_url": str,
+                "fork_full_name": str
+            }
+        """
+        owner, repo = self._parse_repo_url(repo_url)
+
+        # Use user's token for this request
+        headers = {
+            **self.headers,
+            "Authorization": f"Bearer {user_token}",
+        }
+
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            try:
+                response = await client.post(
+                    f"{self.BASE_URL}/repos/{owner}/{repo}/forks",
+                    headers=headers,
+                    timeout=60.0,  # Forking can take a while
+                )
+                response.raise_for_status()
+                fork_data = response.json()
+
+                return {
+                    "fork_url": fork_data.get("html_url"),
+                    "fork_full_name": fork_data.get("full_name"),
+                }
+            except httpx.HTTPStatusError as e:
+                raise ValueError(
+                    f"Failed to create fork: {e.response.status_code} - {e.response.text}"
+                )
+            except Exception as e:
+                raise ValueError(f"Failed to create fork: {str(e)}")

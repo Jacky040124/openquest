@@ -138,10 +138,10 @@ class AgentService:
             logger.error(f"[SANDBOX] Traceback: {traceback.format_exc()}")
             raise SandboxError(f"Failed to create sandbox: {e}")
 
-        # Clone the repository
+        # Clone the repository (shallow clone for speed - large repos like React can take forever otherwise)
         try:
-            logger.info(f"[SANDBOX] Cloning repository: {repo_url}")
-            clone_cmd = f"git clone {repo_url} {self.repo_path}"
+            logger.info(f"[SANDBOX] Cloning repository (shallow): {repo_url}")
+            clone_cmd = f"git clone --depth 1 {repo_url} {self.repo_path}"
             logger.debug(f"[SANDBOX] Clone command: {clone_cmd}")
 
             result = self.sandbox.commands.run(clone_cmd, timeout=120)
@@ -224,7 +224,7 @@ class AgentService:
 
             try:
                 result = self.sandbox.commands.run(
-                    f"git clone {fork_url} {self.repo_path} 2>&1",
+                    f"git clone --depth 1 {fork_url} {self.repo_path} 2>&1",
                     timeout=120,
                 )
             except Exception as clone_exc:

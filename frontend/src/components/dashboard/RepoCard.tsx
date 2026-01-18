@@ -176,18 +176,19 @@ const RepoCard = ({ repo }: RepoCardProps) => {
 
         {/* Topics - single row only */}
         {repo.topics.length > 0 && (
-          <div className="flex gap-1.5 mb-3 overflow-hidden">
-            {repo.topics.slice(0, 2).map((topic) => (
+          <div className="flex gap-1.5 mb-3 flex-wrap max-h-6 overflow-hidden">
+            {repo.topics.slice(0, 3).map((topic) => (
               <span
                 key={topic}
-                className="px-2 py-0.5 text-xs font-mono text-muted-foreground border border-dashed border-border whitespace-nowrap"
+                className="px-2 py-0.5 text-xs font-mono text-muted-foreground border border-dashed border-border truncate max-w-[120px]"
+                title={topic}
               >
-                #{topic.length > 12 ? topic.slice(0, 12) + '…' : topic}
+                #{topic}
               </span>
             ))}
-            {repo.topics.length > 2 && (
-              <span className="px-2 py-0.5 text-xs font-mono text-muted-foreground whitespace-nowrap">
-                +{repo.topics.length - 2}
+            {repo.topics.length > 3 && (
+              <span className="px-2 py-0.5 text-xs font-mono text-muted-foreground">
+                +{repo.topics.length - 3}
               </span>
             )}
           </div>

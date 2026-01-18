@@ -274,7 +274,7 @@ const IssueAnalysis = () => {
 
   // Calculate progress based on step and tool calls
   // During "analyzing" phase, we increment progress based on tool calls
-  // Assuming max 10 turns with ~3 tool calls each = ~30 tool events
+  // Assuming max 5 turns with ~3 tool calls each = ~15 tool events
   const toolCallCountRef = useRef(0);
 
   useEffect(() => {
@@ -282,9 +282,9 @@ const IssueAnalysis = () => {
       setProgress(10);
     } else if (currentStep === 'analyzing') {
       // Progress during analysis: 20% to 85% based on tool calls
-      // Each tool call adds ~2% (capped at 85%)
+      // Each tool call adds ~4% (capped at 65% extra, so max 85%)
       const baseProgress = 20;
-      const toolProgress = Math.min(toolCallCountRef.current * 2, 65);
+      const toolProgress = Math.min(toolCallCountRef.current * 4, 65);
       setProgress(baseProgress + toolProgress);
     } else if (currentStep === 'proposing') {
       setProgress(90);

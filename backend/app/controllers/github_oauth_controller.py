@@ -1,15 +1,24 @@
 """GitHub OAuth Controller - OAuth endpoints for GitHub authentication"""
 
 import logging
+import traceback
+from typing import Annotated
+from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel, Field
 
+from ..dao.user_preference_dao import UserPreferenceDAO
 from ..services.github_oauth_service import GitHubOAuthService
 from ..utils.exceptions import GitHubOAuthError
+from ..utils.supabase_client import get_supabase_client
 
 router = APIRouter(prefix="/oauth", tags=["OAuth"])
 logger = logging.getLogger("oauth")
+
+# Optional bearer token for detecting logged-in users
+security = HTTPBearer(auto_error=False)
 
 
 class AuthorizeResponse(BaseModel):
@@ -42,6 +51,15 @@ class CallbackRequest(BaseModel):
 
     code: str
     state: str
+
+
+class CallbackResponse(BaseModel):
+    """OAuth callback response - matches frontend expectations"""
+
+    model_config = {"populate_by_name": True}
+
+    username: str
+    is_logged_in: bool = Field(serialization_alias="isLoggedIn")
 
 
 @router.get("/github/authorize", response_model=AuthorizeResponse)
@@ -92,55 +110,143 @@ async def github_authorize(
         )
 
 
-@router.post("/github/callback", response_model=TokenResponse)
-async def github_callback(request: CallbackRequest) -> TokenResponse:
+@router.post("/github/callback", response_model=CallbackResponse)
+async def github_callback(
+    request: CallbackRequest,
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(security)
+    ] = None,
+) -> CallbackResponse:
     """
     Handle GitHub OAuth callback.
 
-    Exchange the authorization code for an access token. The frontend should
-    call this endpoint after receiving the callback from GitHub.
+    Exchange the authorization code for an access token, get the GitHub user info,
+    and if the user is logged in (has valid JWT), save the token to their preferences.
 
-    **Important:** The frontend should verify that the state parameter matches
-    the one received from the authorize endpoint before calling this.
+    **Flow:**
+    1. Exchange code for access token
+    2. Get GitHub user info (username)
+    3. If user is logged in, save token to user_preferences
+    4. Return username and login status
 
     Args:
         request: Callback data containing code and state
+        credentials: Optional JWT token (if user is already logged in)
 
     Returns:
-        Access token and token metadata
+        GitHub username and whether user is logged in
 
     Raises:
         400: If code exchange fails
         503: If GitHub OAuth is not configured
     """
+    code_preview = request.code[:8] if len(request.code) > 8 else request.code
+    state_preview = request.state[:8] if len(request.state) > 8 else request.state
+    logger.info(
+        f"[OAuth] Starting callback: code={code_preview}..., state={state_preview}..."
+    )
+
+    oauth_service = GitHubOAuthService()
+    supabase = get_supabase_client()
+
+    # Step 1: Exchange code for token
     try:
-        oauth_service = GitHubOAuthService()
+        logger.info("[OAuth] Step 1: Exchanging code for access token...")
         token_data = await oauth_service.exchange_code(request.code)
-
-        logger.info(
-            "Successfully exchanged OAuth code",
-            extra={"scope": token_data.get("scope")},
-        )
-
-        return TokenResponse(
-            access_token=token_data["access_token"],
-            token_type=token_data["token_type"],
-            scope=token_data["scope"],
-        )
-
+        access_token = token_data["access_token"]
+        scope = token_data.get("scope", "")
+        logger.info(f"[OAuth] Token exchanged successfully, scope={scope}")
     except ValueError as e:
-        logger.error("OAuth not configured", extra={"error": str(e)})
+        logger.error(f"[OAuth] OAuth not configured: {e}")
+        logger.error(f"[OAuth] Traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(e),
         )
-
     except GitHubOAuthError as e:
-        logger.error("OAuth code exchange failed", extra={"error": str(e)})
+        logger.error(f"[OAuth] Code exchange failed: {e}")
+        logger.error(f"[OAuth] Traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
+
+    # Step 2: Get GitHub user info
+    try:
+        logger.info("[OAuth] Step 2: Getting GitHub user info...")
+        user_data = await oauth_service.get_user_info(access_token)
+        github_username = user_data["login"]
+        logger.info(f"[OAuth] GitHub user: {github_username}")
+    except GitHubOAuthError as e:
+        logger.error(f"[OAuth] Failed to get GitHub user info: {e}")
+        logger.error(f"[OAuth] Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to get GitHub user info: {e}",
+        )
+
+    # Step 3: Check if user is logged in and save token
+    is_logged_in = False
+    user_id = None
+
+    if credentials:
+        try:
+            logger.info("[OAuth] Step 3: Verifying JWT and saving token...")
+            token = credentials.credentials
+            user_response = supabase.auth.get_user(token)
+
+            if user_response.user:
+                user_id = str(user_response.user.id)
+                is_logged_in = True
+                logger.info(f"[OAuth] User authenticated: user_id={user_id}")
+
+                # Save token to user preferences
+                dao = UserPreferenceDAO(supabase)
+                preference = dao.update_github(
+                    user_id=UUID(user_id),
+                    github_token=access_token,
+                    github_username=github_username,
+                )
+
+                if preference:
+                    logger.info(
+                        f"[OAuth] Token saved to preferences for user {user_id}"
+                    )
+                else:
+                    # User might not have preferences yet, create them
+                    logger.info(
+                        f"[OAuth] No existing preferences, creating new for user {user_id}"
+                    )
+                    dao.create_or_update(
+                        user_id=UUID(user_id),
+                        languages=[],
+                        skills=[],
+                        project_interests=[],
+                        issue_interests=[],
+                        github_token=access_token,
+                        github_username=github_username,
+                    )
+                    logger.info(
+                        f"[OAuth] Created preferences with GitHub token for user {user_id}"
+                    )
+            else:
+                logger.warning("[OAuth] JWT provided but user not found in Supabase")
+        except Exception as e:
+            # Don't fail the whole callback if saving fails
+            logger.error(f"[OAuth] Failed to verify JWT or save token: {e}")
+            logger.error(f"[OAuth] Traceback: {traceback.format_exc()}")
+            # Still continue - user can try again from dashboard
+    else:
+        logger.info("[OAuth] No JWT provided - user not logged in (onboarding flow)")
+
+    logger.info(
+        f"[OAuth] Callback complete: username={github_username}, isLoggedIn={is_logged_in}"
+    )
+
+    return CallbackResponse(
+        username=github_username,
+        is_logged_in=is_logged_in,
+    )
 
 
 @router.get("/github/user", response_model=GitHubUserResponse)

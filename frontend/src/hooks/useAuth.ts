@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import api, { ApiError } from '@/lib/api';
@@ -121,6 +122,76 @@ export function useCurrentUser() {
   });
 }
 
+// Verify auth token on mount - use this in protected pages
+// Fetches both user and preferences if token is valid
+// Redirects to main page if token is invalid
+export function useVerifyAuth() {
+  const { isLoggedIn, logout, setUser } = useAuthStore();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Check if there's actually a token in localStorage
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('auth_token');
+
+  const query = useQuery({
+    queryKey: ['verifyAuth'],
+    queryFn: async () => {
+      console.log('[Auth] Verifying token and fetching user data...');
+
+      // Double check token exists
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        console.log('[Auth] No token found in localStorage');
+        throw new Error('No auth token');
+      }
+
+      // Verify token by getting user
+      const user = await authApi.getMe();
+      setUser(user);
+      console.log('[Auth] User verified:', user.email);
+
+      // Also fetch preferences
+      try {
+        const preferences = await authApi.getPreferences();
+        // Cache preferences in react-query
+        queryClient.setQueryData(['userPreferences'], preferences);
+        console.log('[Auth] Preferences loaded:', {
+          user_name: preferences.user_name,
+          languages: preferences.languages,
+          skills: preferences.skills,
+          issue_interests: preferences.issue_interests,
+          project_interests: preferences.project_interests,
+        });
+        return { user, preferences };
+      } catch (prefError) {
+        // Preferences might not exist yet (404) - that's okay
+        console.log('[Auth] No preferences found (user may need to complete onboarding)', prefError);
+        return { user, preferences: null };
+      }
+    },
+    // Only run if logged in AND we have a token
+    enabled: isLoggedIn && hasToken,
+    staleTime: 30 * 1000, // Cache for 30 seconds to avoid re-verifying on every navigation
+    retry: false, // Don't retry - if token is invalid, logout immediately
+  });
+
+  // Handle auth errors in useEffect to avoid render-phase side effects
+  useEffect(() => {
+    if (query.isError) {
+      console.error('[Auth] Token verification failed, logging out', query.error);
+      logout();
+      navigate('/');
+    }
+  }, [query.isError, query.error, logout, navigate]);
+
+  return {
+    isVerifying: query.isLoading,
+    isAuthenticated: query.isSuccess,
+    user: query.data?.user,
+    preferences: query.data?.preferences,
+  };
+}
+
 // Update user hook
 export function useUpdateUser() {
   const queryClient = useQueryClient();
@@ -173,16 +244,16 @@ export function useUpdatePreferences() {
     onMutate: async (newPrefs) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['userPreferences'] });
-      
+
       // Snapshot the previous value
       const previousPrefs = queryClient.getQueryData(['userPreferences']);
-      
+
       // Optimistically update to the new value
       queryClient.setQueryData(['userPreferences'], (old: UserPreferenceDTO | undefined) => ({
         ...old,
         ...newPrefs,
       }));
-      
+
       return { previousPrefs };
     },
     onSuccess: (data) => {

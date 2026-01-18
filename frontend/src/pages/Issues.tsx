@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, AlertCircle, MessageSquare, Calendar, Tag, BarChart3, Play } from 'lucide-react';
+import { ArrowLeft, ExternalLink, AlertCircle, MessageSquare, Calendar, Tag, BarChart3, Play, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
+import { useVerifyAuth } from '@/hooks/useAuth';
 import type { IssueDTO, IssueFilterDTO } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +17,9 @@ const Issues = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isLoggedIn } = useAuthStore();
+
+  // Verify auth token on mount - will redirect to login if invalid
+  const { isVerifying, isAuthenticated } = useVerifyAuth();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -55,8 +59,20 @@ const Issues = () => {
     });
   };
 
+  // Show loading while verifying auth token
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground font-mono text-sm">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Don't render if not authenticated
-  if (!isLoggedIn) {
+  if (!isLoggedIn || !isAuthenticated) {
     return null;
   }
 
