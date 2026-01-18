@@ -27,6 +27,7 @@ interface PreferencesState {
   toggleIssueInterest: (interest: IssueInterest) => void;
   toggleProjectInterest: (interest: ProjectInterest) => void;
   resetPreferences: () => void;
+  setPreferences: (prefs: Partial<Preferences>) => void;
   getSkillsForApi: () => SkillInputDTO[];
 }
 
@@ -112,6 +113,14 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => ({
     })),
 
   resetPreferences: () => set({ currentStep: 0, preferences: initialPreferences }),
+
+  setPreferences: (prefs) =>
+    set((state) => ({
+      preferences: {
+        ...state.preferences,
+        ...prefs,
+      },
+    })),
 
   getSkillsForApi: () => {
     return get().preferences.skills.map((skill) => ({

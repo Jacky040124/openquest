@@ -207,6 +207,7 @@ async def create_user_preferences(
             skills=skills_data,
             project_interests=project_interests,
             issue_interests=issue_interests,
+            user_name=data.user_name,
             github_token=data.github_token,
             github_username=data.github_username,
         )
@@ -279,7 +280,8 @@ async def update_user_preferences(
 
         # Check if at least one field is provided for update
         has_updates = (
-            data.languages is not None
+            data.user_name is not None
+            or data.languages is not None
             or data.skills is not None
             or data.project_interests is not None
             or data.issue_interests is not None
@@ -313,6 +315,7 @@ async def update_user_preferences(
         # Try partial update first
         preference = dao.update_partial(
             user_id=user_id,
+            user_name=data.user_name,
             languages=data.languages,
             skills=skills_data,
             project_interests=project_interests,

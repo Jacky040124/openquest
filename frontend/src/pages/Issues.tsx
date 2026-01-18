@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, AlertCircle, MessageSquare, Calendar, Tag, BarChart3, Play } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 import type { IssueDTO, IssueFilterDTO } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +15,14 @@ import logo from "@/assets/logo.png";
 const Issues = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { isLoggedIn } = useAuthStore();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoggedIn) {
+      navigate('/login');
+    }
+  }, [isLoggedIn, navigate]);
   const repoUrl = searchParams.get('repo_url') || '';
   const repoName = searchParams.get('repo_name') || 'Repository';
 
@@ -44,6 +54,11 @@ const Issues = () => {
       day: 'numeric'
     });
   };
+
+  // Don't render if not authenticated
+  if (!isLoggedIn) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">
