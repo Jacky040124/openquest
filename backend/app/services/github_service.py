@@ -224,13 +224,12 @@ class GitHubService:
         """
         query_parts = []
 
-        # Add language filters (PRIMARY - if provided, use OR logic)
-        # GitHub API: language:Python language:JavaScript means Python OR JavaScript
+        # Add language filters
         if languages:
             for lang in languages:
                 query_parts.append(f"language:{lang}")
 
-        # Add topic filters (SECONDARY - only if no language filter or as additional filter)
+        # Add topic filters
         if topics:
             for topic in topics:
                 query_parts.append(f"topic:{topic}")
@@ -279,7 +278,7 @@ class GitHubService:
                     full_name=item["full_name"],
                     url=item["html_url"],
                     description=item.get("description"),
-                    language=repo_language,
+                    language=item.get("language") or "Unknown",
                     stars=item.get("stargazers_count", 0),
                     open_issues_count=item.get("open_issues_count", 0),
                     topics=item.get("topics", []),

@@ -10,7 +10,7 @@ from ..services.github_service import GitHubService
 from ..services.openrouter_service import OpenRouterService
 from ..services.prompt_service import PromptService
 from ..services.repo_service import RepoService
-from ..utils.dependencies import CurrentUser, SupabaseClient
+from ..utils.dependencies import CurrentUser, DBSession
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/repos", tags=["Repositories"])
@@ -30,7 +30,7 @@ def _get_openrouter_service() -> OpenRouterService | None:
 @router.get("/recommend", response_model=list[RepoDTO])
 async def recommend_repos(
     current_user: CurrentUser,
-    supabase: SupabaseClient,
+    db: DBSession,
     limit: int = Query(
         default=10, ge=1, le=50, description="Number of repos to return"
     ),
@@ -69,7 +69,7 @@ async def recommend_repos(
 
         repo_service = RepoService(
             github_service=github_service,
-            supabase=supabase,
+            db=db,
             openrouter_service=openrouter_service,
             prompt_service=prompt_service,
         )
