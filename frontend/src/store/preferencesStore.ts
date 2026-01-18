@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { SkillName, Familiarity, ProjectInterest, IssueInterest, SkillInputDTO } from '@/types/api';
 
 // Skill with familiarity for UI state
@@ -37,85 +38,97 @@ const initialPreferences: Preferences = {
   project_interests: [],
 };
 
-// Total steps after removing ExperienceStep: Welcome(0), Languages(1), Skills(2), IssueTypes(3), ProjectTypes(4), Summary(5), CreateAccount(6)
-const TOTAL_STEPS = 6;
+// Total steps: Welcome(0), Languages(1), Skills(2), IssueTypes(3), ProjectTypes(4), Summary(5), GitHubConnect(6), CreateAccount(7)
+const TOTAL_STEPS = 7;
 
-export const usePreferencesStore = create<PreferencesState>((set, get) => ({
-  currentStep: 0,
-  preferences: initialPreferences,
+export const usePreferencesStore = create<PreferencesState>()(
+  persist(
+    (set, get) => ({
+      currentStep: 0,
+      preferences: initialPreferences,
 
-  setStep: (step) => set({ currentStep: step }),
+      setStep: (step) => set({ currentStep: step }),
 
-  nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, TOTAL_STEPS) })),
+      nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, TOTAL_STEPS) })),
 
-  prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 0) })),
+      prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 0) })),
 
-  toggleLanguage: (lang) =>
-    set((state) => ({
-      preferences: {
-        ...state.preferences,
-        languages: state.preferences.languages.includes(lang)
-          ? state.preferences.languages.filter((l) => l !== lang)
-          : [...state.preferences.languages, lang],
+      toggleLanguage: (lang) =>
+        set((state) => ({
+          preferences: {
+            ...state.preferences,
+            languages: state.preferences.languages.includes(lang)
+              ? state.preferences.languages.filter((l) => l !== lang)
+              : [...state.preferences.languages, lang],
+          },
+        })),
+
+      addSkill: (skill) =>
+        set((state) => {
+          const exists = state.preferences.skills.find((s) => s.name === skill.name);
+          if (exists) return state;
+          return {
+            preferences: {
+              ...state.preferences,
+              skills: [...state.preferences.skills, skill],
+            },
+          };
+        }),
+
+      removeSkill: (skillName) =>
+        set((state) => ({
+          preferences: {
+            ...state.preferences,
+            skills: state.preferences.skills.filter((s) => s.name !== skillName),
+          },
+        })),
+
+      updateSkillFamiliarity: (skillName, familiarity) =>
+        set((state) => ({
+          preferences: {
+            ...state.preferences,
+            skills: state.preferences.skills.map((s) =>
+              s.name === skillName ? { ...s, familiarity } : s
+            ),
+          },
+        })),
+
+      toggleIssueInterest: (interest) =>
+        set((state) => ({
+          preferences: {
+            ...state.preferences,
+            issue_interests: state.preferences.issue_interests.includes(interest)
+              ? state.preferences.issue_interests.filter((i) => i !== interest)
+              : [...state.preferences.issue_interests, interest],
+          },
+        })),
+
+      toggleProjectInterest: (interest) =>
+        set((state) => ({
+          preferences: {
+            ...state.preferences,
+            project_interests: state.preferences.project_interests.includes(interest)
+              ? state.preferences.project_interests.filter((i) => i !== interest)
+              : [...state.preferences.project_interests, interest],
+          },
+        })),
+
+      resetPreferences: () => set({ currentStep: 0, preferences: initialPreferences }),
+
+      getSkillsForApi: () => {
+        return get().preferences.skills.map((skill) => ({
+          name: skill.name,
+          familiarity: skill.familiarity,
+        }));
       },
-    })),
-
-  addSkill: (skill) =>
-    set((state) => {
-      const exists = state.preferences.skills.find((s) => s.name === skill.name);
-      if (exists) return state;
-      return {
-        preferences: {
-          ...state.preferences,
-          skills: [...state.preferences.skills, skill],
-        },
-      };
     }),
-
-  removeSkill: (skillName) =>
-    set((state) => ({
-      preferences: {
-        ...state.preferences,
-        skills: state.preferences.skills.filter((s) => s.name !== skillName),
-      },
-    })),
-
-  updateSkillFamiliarity: (skillName, familiarity) =>
-    set((state) => ({
-      preferences: {
-        ...state.preferences,
-        skills: state.preferences.skills.map((s) =>
-          s.name === skillName ? { ...s, familiarity } : s
-        ),
-      },
-    })),
-
-  toggleIssueInterest: (interest) =>
-    set((state) => ({
-      preferences: {
-        ...state.preferences,
-        issue_interests: state.preferences.issue_interests.includes(interest)
-          ? state.preferences.issue_interests.filter((i) => i !== interest)
-          : [...state.preferences.issue_interests, interest],
-      },
-    })),
-
-  toggleProjectInterest: (interest) =>
-    set((state) => ({
-      preferences: {
-        ...state.preferences,
-        project_interests: state.preferences.project_interests.includes(interest)
-          ? state.preferences.project_interests.filter((i) => i !== interest)
-          : [...state.preferences.project_interests, interest],
-      },
-    })),
-
-  resetPreferences: () => set({ currentStep: 0, preferences: initialPreferences }),
-
-  getSkillsForApi: () => {
-    return get().preferences.skills.map((skill) => ({
-      name: skill.name,
-      familiarity: skill.familiarity,
-    }));
-  },
-}));
+    {
+      name: 'preferences-storage',
+      // Persist currentStep and preferences so OAuth redirect doesn't lose state
+      partialize: (state) => ({
+        currentStep: state.currentStep,
+        preferences: state.preferences,
+      }),
+    }
+  )
+);

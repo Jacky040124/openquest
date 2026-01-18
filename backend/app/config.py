@@ -28,9 +28,6 @@ class Settings(BaseSettings):
 
     # GitHub
     github_token: str | None = None
-    github_client_id: str | None = None
-    github_client_secret: str | None = None
-    github_redirect_uri: str | None = None
 
     # GitHub OAuth
     github_client_id: str | None = None
@@ -47,13 +44,6 @@ class Settings(BaseSettings):
     # E2B Sandbox
     e2b_api_key: str | None = None
     e2b_sandbox_timeout: int = 600  # 10 minutes
-
-    # Agent Configuration
-    agent_max_turns: int = 10
-    agent_max_tokens_per_tool: int = 8000
-
-    # E2B
-    e2b_api_key: str | None = None
 
     # Agent Configuration
     agent_max_turns: int = 25
