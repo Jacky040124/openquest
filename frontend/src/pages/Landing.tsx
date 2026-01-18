@@ -64,8 +64,8 @@ const Landing = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.6 }}
           >
-            Find Your Perfect
-            <span className="text-primary block mt-2">Open Source Match</span>
+            From <span className="font-black" style={{ color: '#6b6966' }}>Iron</span> to{' '}
+            <span className="font-black" style={{ color: '#f9ebc8', textShadow: '0 0 20px rgba(249, 235, 200, 0.8), 0 0 40px rgba(249, 235, 200, 0.5), 0 0 60px rgba(249, 235, 200, 0.3)' }}>Oracle</span>
           </motion.h1>
 
           <motion.p

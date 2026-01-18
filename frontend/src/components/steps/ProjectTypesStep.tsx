@@ -1,124 +1,84 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import SelectionCard from '@/components/SelectionCard';
-import {
-  Globe, Smartphone, Monitor, Terminal, Server,
-  Package, Brain, Database, Wrench, Gamepad2,
-  Blocks, Cpu, Shield, Cog, Cloud
-} from 'lucide-react';
-import type { ProjectInterest } from '@/types/api';
+import { Gamepad2, Wrench, Brain, Globe, Database, Smartphone, BarChart3, Lock, Plus } from 'lucide-react';
 
-// Project interests matching backend ProjectInterest enum
-const projectInterests: {
-  id: ProjectInterest;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-}[] = [
+const projectTypes = [
   {
-    id: 'webapp',
+    id: 'Game Development',
+    title: 'Game Development',
+    description: 'Game development, engines, and related tooling',
+    icon: <Gamepad2 className="w-6 h-6" />,
+  },
+  {
+    id: 'CLI Tools',
+    title: 'CLI Tools',
+    description: 'CLI tools, IDEs, build systems, and utilities',
+    icon: <Wrench className="w-6 h-6" />,
+  },
+  {
+    id: 'Machine Learning',
+    title: 'Machine Learning',
+    description: 'ML frameworks, AI applications, and data science',
+    icon: <Brain className="w-6 h-6" />,
+  },
+  {
+    id: 'Web Applications',
     title: 'Web Applications',
     description: 'Web frameworks, CMS, and web-based tools',
     icon: <Globe className="w-6 h-6" />,
   },
   {
-    id: 'mobile',
+    id: 'DevOps',
+    title: 'DevOps',
+    description: 'Cloud, containers, CI/CD, and deployment',
+    icon: <Database className="w-6 h-6" />,
+  },
+  {
+    id: 'Mobile Apps',
     title: 'Mobile Apps',
     description: 'iOS, Android, and cross-platform development',
     icon: <Smartphone className="w-6 h-6" />,
   },
   {
-    id: 'desktop',
-    title: 'Desktop Apps',
-    description: 'Native desktop applications',
-    icon: <Monitor className="w-6 h-6" />,
-  },
-  {
-    id: 'cli',
-    title: 'CLI Tools',
-    description: 'Command-line tools and utilities',
-    icon: <Terminal className="w-6 h-6" />,
-  },
-  {
-    id: 'api',
-    title: 'APIs & Backend',
-    description: 'REST APIs, GraphQL, and backend services',
-    icon: <Server className="w-6 h-6" />,
-  },
-  {
-    id: 'library',
+    id: 'Libraries',
     title: 'Libraries',
-    description: 'Reusable libraries and packages',
-    icon: <Package className="w-6 h-6" />,
+    description: 'Data processing, visualization, and analytics',
+    icon: <BarChart3 className="w-6 h-6" />,
   },
   {
-    id: 'llm',
-    title: 'LLM & AI',
-    description: 'Large language models and AI applications',
-    icon: <Brain className="w-6 h-6" />,
-  },
-  {
-    id: 'ml',
-    title: 'Machine Learning',
-    description: 'ML frameworks and data science',
-    icon: <Brain className="w-6 h-6" />,
-  },
-  {
-    id: 'data',
-    title: 'Data & Analytics',
-    description: 'Data processing and visualization',
-    icon: <Database className="w-6 h-6" />,
-  },
-  {
-    id: 'devtools',
-    title: 'Developer Tools',
-    description: 'IDEs, build systems, and dev utilities',
-    icon: <Wrench className="w-6 h-6" />,
-  },
-  {
-    id: 'game',
-    title: 'Game Development',
-    description: 'Game engines and game-related tools',
-    icon: <Gamepad2 className="w-6 h-6" />,
-  },
-  {
-    id: 'blockchain',
+    id: 'Blockchain',
     title: 'Blockchain',
-    description: 'Cryptocurrency and decentralized apps',
-    icon: <Blocks className="w-6 h-6" />,
-  },
-  {
-    id: 'iot',
-    title: 'IoT & Embedded',
-    description: 'Internet of Things and embedded systems',
-    icon: <Cpu className="w-6 h-6" />,
-  },
-  {
-    id: 'security',
-    title: 'Security',
-    description: 'Security tools and privacy-focused apps',
-    icon: <Shield className="w-6 h-6" />,
-  },
-  {
-    id: 'automation',
-    title: 'Automation',
-    description: 'Automation scripts and workflows',
-    icon: <Cog className="w-6 h-6" />,
-  },
-  {
-    id: 'infrastructure',
-    title: 'Infrastructure',
-    description: 'Cloud, containers, and DevOps tools',
-    icon: <Cloud className="w-6 h-6" />,
+    description: 'Security tools, encryption, and privacy-focused apps',
+    icon: <Lock className="w-6 h-6" />,
   },
 ];
 
 const ProjectTypesStep = () => {
-  const { preferences, toggleProjectInterest, nextStep, prevStep } = usePreferencesStore();
+  const { preferences, toggleProjectType, nextStep, prevStep } = usePreferencesStore();
+  const [otherInput, setOtherInput] = useState('');
+  const [customTypes, setCustomTypes] = useState<{ id: string; title: string }[]>([]);
+
+  const handleAddCustom = () => {
+    if (otherInput.trim() && !customTypes.find(t => t.title.toLowerCase() === otherInput.trim().toLowerCase())) {
+      const customValue = otherInput.trim();
+      setCustomTypes([...customTypes, { id: customValue, title: customValue }]);
+      toggleProjectType(customValue);
+      setOtherInput('');
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddCustom();
+    }
+  };
 
   return (
     <motion.div
-      className="max-w-4xl mx-auto"
+      className="max-w-3xl mx-auto"
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
@@ -131,27 +91,63 @@ const ProjectTypesStep = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {projectInterests.map((type, index) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {projectTypes.map((type, index) => (
           <motion.div
             key={type.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.04 }}
+            transition={{ delay: index * 0.06 }}
           >
             <SelectionCard
               title={type.title}
               description={type.description}
               icon={type.icon}
-              selected={preferences.project_interests.includes(type.id)}
-              onClick={() => toggleProjectInterest(type.id)}
+              selected={preferences.projectTypes.includes(type.id)}
+              onClick={() => toggleProjectType(type.id)}
+            />
+          </motion.div>
+        ))}
+        {customTypes.map((type, index) => (
+          <motion.div
+            key={type.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: (projectTypes.length + index) * 0.06 }}
+          >
+            <SelectionCard
+              title={type.title}
+              description="Custom project type"
+              selected={preferences.projectTypes.includes(type.id)}
+              onClick={() => toggleProjectType(type.id)}
             />
           </motion.div>
         ))}
       </div>
 
-      <div className="text-center mt-6 text-sm text-muted-foreground">
-        {preferences.project_interests.length} project type{preferences.project_interests.length !== 1 ? 's' : ''} selected
+      <div className="mt-6 flex justify-center">
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-sm">Other:</span>
+          <input
+            type="text"
+            value={otherInput}
+            onChange={(e) => setOtherInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Enter project type..."
+            className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-44"
+          />
+          <button
+            onClick={handleAddCustom}
+            disabled={!otherInput.trim()}
+            className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="text-center mt-4 text-sm text-muted-foreground">
+        {preferences.projectTypes.length} project type{preferences.projectTypes.length !== 1 ? 's' : ''} selected
       </div>
 
       <div className="flex justify-between mt-8">
@@ -160,9 +156,9 @@ const ProjectTypesStep = () => {
         </button>
         <button
           onClick={nextStep}
-          disabled={preferences.project_interests.length === 0}
+          disabled={preferences.projectTypes.length === 0}
           className={`btn-primary ${
-            preferences.project_interests.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
+            preferences.projectTypes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
           View Summary

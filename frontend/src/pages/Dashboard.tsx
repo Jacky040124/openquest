@@ -24,51 +24,92 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import logo from "@/assets/logo.png";
 
-// Display labels for issue interests
-const issueInterestLabels: Record<string, string> = {
-  bug_fix: 'Bug Fixes',
-  feature: 'Features',
-  enhancement: 'Enhancements',
-  optimization: 'Optimization',
-  refactor: 'Refactoring',
-  testing: 'Testing',
-  documentation: 'Docs',
-  accessibility: 'A11y',
-  security: 'Security',
-  ui_ux: 'UI/UX',
-  dependency: 'Deps',
-  ci_cd: 'CI/CD',
-  cleanup: 'Cleanup',
-};
-
-// Display labels for project interests
-const projectInterestLabels: Record<string, string> = {
-  webapp: 'Web Apps',
-  mobile: 'Mobile',
-  desktop: 'Desktop',
-  cli: 'CLI',
-  api: 'APIs',
-  library: 'Libraries',
-  llm: 'LLM/AI',
-  ml: 'ML',
-  data: 'Data',
-  devtools: 'DevTools',
-  game: 'Games',
-  blockchain: 'Blockchain',
-  iot: 'IoT',
-  security: 'Security',
-  automation: 'Automation',
-  infrastructure: 'Infra',
-};
+// Mock recommended repos based on user preferences
+const mockRepos = [
+  {
+    id: 1,
+    name: 'react',
+    owner: 'facebook',
+    description: 'The library for web and native user interfaces.',
+    stars: 220000,
+    forks: 45000,
+    language: 'JavaScript',
+    topics: ['javascript', 'frontend', 'ui', 'library'],
+    issueCount: 892,
+    matchScore: 95,
+    goodFirstIssues: 24,
+  },
+  {
+    id: 2,
+    name: 'vscode',
+    owner: 'microsoft',
+    description: 'Visual Studio Code - Open Source IDE',
+    stars: 156000,
+    forks: 27000,
+    language: 'TypeScript',
+    topics: ['typescript', 'editor', 'ide', 'developer-tools'],
+    issueCount: 5432,
+    matchScore: 88,
+    goodFirstIssues: 156,
+  },
+  {
+    id: 3,
+    name: 'next.js',
+    owner: 'vercel',
+    description: 'The React Framework for the Web',
+    stars: 118000,
+    forks: 25000,
+    language: 'TypeScript',
+    topics: ['react', 'nextjs', 'framework', 'ssr'],
+    issueCount: 2341,
+    matchScore: 92,
+    goodFirstIssues: 45,
+  },
+  {
+    id: 4,
+    name: 'tailwindcss',
+    owner: 'tailwindlabs',
+    description: 'A utility-first CSS framework for rapid UI development.',
+    stars: 78000,
+    forks: 3900,
+    language: 'CSS',
+    topics: ['css', 'framework', 'utility-first', 'styling'],
+    issueCount: 234,
+    matchScore: 85,
+    goodFirstIssues: 12,
+  },
+  {
+    id: 5,
+    name: 'supabase',
+    owner: 'supabase',
+    description: 'The open source Firebase alternative.',
+    stars: 64000,
+    forks: 5800,
+    language: 'TypeScript',
+    topics: ['database', 'backend', 'postgres', 'auth'],
+    issueCount: 678,
+    matchScore: 79,
+    goodFirstIssues: 89,
+  },
+  {
+    id: 6,
+    name: 'prisma',
+    owner: 'prisma',
+    description: 'Next-generation ORM for Node.js & TypeScript',
+    stars: 37000,
+    forks: 1400,
+    language: 'TypeScript',
+    topics: ['orm', 'database', 'typescript', 'nodejs'],
+    issueCount: 456,
+    matchScore: 76,
+    goodFirstIssues: 34,
+  },
+];
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { preferences, resetPreferences } = usePreferencesStore();
-  const { isLoggedIn, user } = useAuthStore();
-  const { mutate: logout } = useLogout();
-  const { data: repos, isLoading, error, refetch } = useRecommendations({ limit: 10 });
-  const { data: userPrefs } = useUserPreferences();
-
+  const { isLoggedIn, logout, user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfile, setShowProfile] = useState(false);
   const [showEditPreferences, setShowEditPreferences] = useState(false);
@@ -114,8 +155,9 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     setShowSignOutDialog(false);
-    resetPreferences();
     logout();
+    resetPreferences();
+    navigate("/");
   };
 
   const handleSignOutClick = () => {
@@ -127,19 +169,15 @@ const Dashboard = () => {
     setShowEditPreferences(true);
   };
 
-  const handleRefresh = () => {
-    refetch();
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Background gradient effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div
+        <div 
           className="absolute -top-1/2 -left-1/2 w-full h-full opacity-30"
           style={{ background: 'radial-gradient(circle, hsl(220 70% 45% / 0.08) 0%, transparent 70%)' }}
         />
-        <div
+        <div 
           className="absolute -bottom-1/2 -right-1/2 w-full h-full opacity-30"
           style={{ background: 'radial-gradient(circle, hsl(45 95% 55% / 0.08) 0%, transparent 70%)' }}
         />
@@ -186,9 +224,9 @@ const Dashboard = () => {
                       <User className="w-6 h-6 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">{user?.email || 'Developer'}</h3>
-                      <p className="text-muted-foreground text-sm">
-                        Open source contributor
+                      <h3 className="font-semibold">{user?.username || 'Developer'}</h3>
+                      <p className="text-muted-foreground text-sm capitalize">
+                        {preferences.experienceLevel || 'New'} contributor
                       </p>
                     </div>
                   </div>
@@ -207,8 +245,8 @@ const Dashboard = () => {
                         <span>Languages</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {displayPrefs.languages.length > 0 ? (
-                          displayPrefs.languages.slice(0, 4).map((lang) => (
+                        {preferences.languages.length > 0 ? (
+                          preferences.languages.slice(0, 4).map((lang) => (
                             <Badge key={lang} variant="secondary" className="text-xs">
                               {lang}
                             </Badge>
@@ -216,74 +254,74 @@ const Dashboard = () => {
                         ) : (
                           <span className="text-muted-foreground text-xs">None selected</span>
                         )}
-                        {displayPrefs.languages.length > 4 && (
-                          <Badge variant="outline" className="text-xs">+{displayPrefs.languages.length - 4}</Badge>
+                        {preferences.languages.length > 4 && (
+                          <Badge variant="outline" className="text-xs">+{preferences.languages.length - 4}</Badge>
                         )}
                       </div>
                     </div>
 
-                    {/* Skills */}
+                    {/* Frameworks */}
                     <div>
                       <div className="flex items-center gap-2 text-xs font-medium mb-1.5 text-muted-foreground">
-                        <Wrench className="w-3 h-3" />
-                        <span>Skills</span>
+                        <Layers className="w-3 h-3" />
+                        <span>Frameworks</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {displayPrefs.skills.length > 0 ? (
-                          displayPrefs.skills.slice(0, 4).map((skill) => (
-                            <Badge key={skill.name} variant="secondary" className="text-xs capitalize">
-                              {skill.name}
+                        {preferences.frameworks.length > 0 ? (
+                          preferences.frameworks.slice(0, 4).map((framework) => (
+                            <Badge key={framework} variant="secondary" className="text-xs">
+                              {framework}
                             </Badge>
                           ))
                         ) : (
                           <span className="text-muted-foreground text-xs">None selected</span>
                         )}
-                        {displayPrefs.skills.length > 4 && (
-                          <Badge variant="outline" className="text-xs">+{displayPrefs.skills.length - 4}</Badge>
+                        {preferences.frameworks.length > 4 && (
+                          <Badge variant="outline" className="text-xs">+{preferences.frameworks.length - 4}</Badge>
                         )}
                       </div>
                     </div>
 
-                    {/* Issue Interests */}
+                    {/* Issue Types */}
                     <div>
                       <div className="flex items-center gap-2 text-xs font-medium mb-1.5 text-muted-foreground">
                         <Target className="w-3 h-3" />
                         <span>Issue Types</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {displayPrefs.issue_interests.length > 0 ? (
-                          displayPrefs.issue_interests.slice(0, 3).map((interest) => (
-                            <Badge key={interest} variant="secondary" className="text-xs">
-                              {issueInterestLabels[interest] || interest}
+                        {preferences.issueTypes.length > 0 ? (
+                          preferences.issueTypes.slice(0, 3).map((type) => (
+                            <Badge key={type} variant="secondary" className="text-xs">
+                              {type}
                             </Badge>
                           ))
                         ) : (
                           <span className="text-muted-foreground text-xs">None selected</span>
                         )}
-                        {displayPrefs.issue_interests.length > 3 && (
-                          <Badge variant="outline" className="text-xs">+{displayPrefs.issue_interests.length - 3}</Badge>
+                        {preferences.issueTypes.length > 3 && (
+                          <Badge variant="outline" className="text-xs">+{preferences.issueTypes.length - 3}</Badge>
                         )}
                       </div>
                     </div>
 
-                    {/* Project Interests */}
+                    {/* Project Types */}
                     <div>
                       <div className="flex items-center gap-2 text-xs font-medium mb-1.5 text-muted-foreground">
                         <Folder className="w-3 h-3" />
                         <span>Project Types</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {displayPrefs.project_interests.length > 0 ? (
-                          displayPrefs.project_interests.slice(0, 3).map((interest) => (
-                            <Badge key={interest} variant="secondary" className="text-xs">
-                              {projectInterestLabels[interest] || interest}
+                        {preferences.projectTypes.length > 0 ? (
+                          preferences.projectTypes.slice(0, 3).map((type) => (
+                            <Badge key={type} variant="secondary" className="text-xs">
+                              {type}
                             </Badge>
                           ))
                         ) : (
                           <span className="text-muted-foreground text-xs">None selected</span>
                         )}
-                        {displayPrefs.project_interests.length > 3 && (
-                          <Badge variant="outline" className="text-xs">+{displayPrefs.project_interests.length - 3}</Badge>
+                        {preferences.projectTypes.length > 3 && (
+                          <Badge variant="outline" className="text-xs">+{preferences.projectTypes.length - 3}</Badge>
                         )}
                       </div>
                     </div>
@@ -292,9 +330,9 @@ const Dashboard = () => {
                   <Separator className="my-4" />
 
                   {/* Edit Preferences Button */}
-                  <Button
-                    variant="outline"
-                    className="w-full gap-2"
+                  <Button 
+                    variant="outline" 
+                    className="w-full gap-2" 
                     onClick={handleEditPreferences}
                   >
                     <Edit2 className="w-4 h-4" />
@@ -304,14 +342,12 @@ const Dashboard = () => {
                   {/* Stats */}
                   <div className="mt-4 grid grid-cols-2 gap-3 text-center">
                     <div className="bg-muted/50 rounded-lg p-2">
-                      <div className="text-lg font-bold text-primary">{repos?.length || 0}</div>
+                      <div className="text-lg font-bold text-primary">6</div>
                       <div className="text-xs text-muted-foreground">Matches</div>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-2">
-                      <div className="text-lg font-bold text-accent">
-                        {repos?.reduce((sum, r) => sum + r.good_first_issue_count, 0) || 0}
-                      </div>
-                      <div className="text-xs text-muted-foreground">Good First Issues</div>
+                      <div className="text-lg font-bold text-accent">360</div>
+                      <div className="text-xs text-muted-foreground">Open Issues</div>
                     </div>
                   </div>
                 </div>
@@ -339,7 +375,7 @@ const Dashboard = () => {
             className="mb-8"
           >
             <h1 className="text-3xl font-bold mb-2">
-              Welcome back, <span className="gradient-text">{user?.email?.split('@')[0] || 'Developer'}</span>
+              Welcome back, <span className="gradient-text">{user?.username || 'Developer'}</span>
             </h1>
             <p className="text-muted-foreground">
               Here are some open source projects that match your preferences
@@ -396,24 +432,6 @@ const Dashboard = () => {
             </Button>
           </motion.div>
 
-          {/* Loading State */}
-          {isLoading && (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <span className="ml-3 text-muted-foreground">Loading recommendations...</span>
-            </div>
-          )}
-
-          {/* Error State */}
-          {error && (
-            <div className="text-center py-12">
-              <p className="text-destructive mb-4">Failed to load recommendations.</p>
-              <Button variant="outline" onClick={() => refetch()}>
-                Try Again
-              </Button>
-            </div>
-          )}
-
           {/* Repo Grid */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -435,20 +453,16 @@ const Dashboard = () => {
 
           {filteredAndSortedRepos.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                {searchQuery
-                  ? 'No repositories found matching your search.'
-                  : 'No recommendations available. Try updating your preferences.'}
-              </p>
+              <p className="text-muted-foreground">No repositories found matching your search.</p>
             </div>
           )}
         </main>
       </div>
 
       {/* Edit Preferences Dialog */}
-      <EditPreferencesDialog
-        open={showEditPreferences}
-        onOpenChange={setShowEditPreferences}
+      <EditPreferencesDialog 
+        open={showEditPreferences} 
+        onOpenChange={setShowEditPreferences} 
       />
 
       {/* Sign Out Confirmation Dialog */}

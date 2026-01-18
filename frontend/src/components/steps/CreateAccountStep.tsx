@@ -2,82 +2,44 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
-import { usePreferencesStore } from '@/store/preferencesStore';
-import { useRegister, useLogin, useCreatePreferences } from '@/hooks/useAuth';
-import { Mail, Lock, Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 
 const CreateAccountStep = () => {
   const navigate = useNavigate();
-  const { error: authError, setError } = useAuthStore();
-  const { preferences, getSkillsForApi } = usePreferencesStore();
-  const registerMutation = useRegister();
-  const loginMutation = useLogin();
-  const createPrefsMutation = useCreatePreferences();
-
-  const [email, setEmail] = useState('');
+  const { login } = useAuthStore();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [localError, setLocalError] = useState('');
+  const [error, setError] = useState('');
 
-  const isLoading = registerMutation.isPending || loginMutation.isPending || createPrefsMutation.isPending;
-
-  const handleCreateAccount = async () => {
-    setLocalError('');
-    setError(null);
-
-    // Validation
-    if (!email.trim()) {
-      setLocalError('Please enter an email address');
-      return;
-    }
-    if (!email.includes('@')) {
-      setLocalError('Please enter a valid email address');
+  const handleCreateAccount = () => {
+    if (!username.trim()) {
+      setError('Please enter a username');
       return;
     }
     if (password.length < 6) {
-      setLocalError('Password must be at least 6 characters');
+      setError('Password must be at least 6 characters');
       return;
     }
     if (password !== confirmPassword) {
-      setLocalError('Passwords do not match');
+      setError('Passwords do not match');
       return;
     }
 
-    try {
-      // 1. Register the user
-      await registerMutation.mutateAsync({ email: email.trim(), password });
-
-      // 2. Login to get tokens
-      await loginMutation.mutateAsync({ email: email.trim(), password });
-
-      // 3. Create preferences
-      await createPrefsMutation.mutateAsync({
-        languages: preferences.languages,
-        skills: getSkillsForApi(),
-        project_interests: preferences.project_interests,
-        issue_interests: preferences.issue_interests,
-      });
-
-      // 4. Navigate to dashboard
-      navigate('/dashboard');
-    } catch (err) {
-      // Errors are handled by the mutation hooks
-      console.error('Registration flow error:', err);
-    }
+    login(username.trim());
+    navigate('/dashboard');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isLoading) {
+    if (e.key === 'Enter') {
       handleCreateAccount();
     }
   };
-
-  const displayError = localError || authError;
 
   return (
     <motion.div
@@ -108,34 +70,31 @@ const CreateAccountStep = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        {displayError && (
+        {error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm text-center"
           >
-            {displayError}
+            {error}
           </motion.div>
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="flex items-center gap-2">
-            <Mail className="w-4 h-4" />
-            Email
+          <Label htmlFor="username" className="flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Username
           </Label>
           <Input
-            id="email"
-            type="email"
-            value={email}
+            id="username"
+            value={username}
             onChange={(e) => {
-              setEmail(e.target.value);
-              setLocalError('');
-              setError(null);
+              setUsername(e.target.value);
+              setError('');
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Enter your email"
+            placeholder="Choose a username"
             className="bg-background"
-            disabled={isLoading}
           />
         </div>
 
@@ -151,19 +110,16 @@ const CreateAccountStep = () => {
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
-                setLocalError('');
-                setError(null);
+                setError('');
               }}
               onKeyDown={handleKeyDown}
               placeholder="Create a password"
               className="bg-background pr-10"
-              disabled={isLoading}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              disabled={isLoading}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -182,19 +138,16 @@ const CreateAccountStep = () => {
               value={confirmPassword}
               onChange={(e) => {
                 setConfirmPassword(e.target.value);
-                setLocalError('');
-                setError(null);
+                setError('');
               }}
               onKeyDown={handleKeyDown}
               placeholder="Confirm your password"
               className="bg-background pr-10"
-              disabled={isLoading}
             />
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              disabled={isLoading}
             >
               {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -204,19 +157,9 @@ const CreateAccountStep = () => {
         <Button
           onClick={handleCreateAccount}
           className="w-full"
-          disabled={isLoading}
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating account...
-            </>
-          ) : (
-            <>
-              <UserPlus className="w-4 h-4 mr-2" />
-              Create Account & Continue
-            </>
-          )}
+          <UserPlus className="w-4 h-4 mr-2" />
+          Create Account & Continue
         </Button>
 
         <p className="text-xs text-muted-foreground text-center">

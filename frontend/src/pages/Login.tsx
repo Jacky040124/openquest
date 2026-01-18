@@ -1,24 +1,25 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
+import { User, Lock, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useLogin } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/authStore";
 import logo from "@/assets/logo.png";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { mutate: login, isPending } = useLogin();
-  const { error } = useAuthStore();
-  const [email, setEmail] = useState("");
+  const { login } = useAuthStore();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) {
-      login({ email, password });
+    // TODO: Replace with actual authentication
+    // For now, simulate login and go directly to dashboard
+    if (username && password) {
+      login(username);
+      navigate("/dashboard");
     }
   };
 
@@ -73,28 +74,19 @@ const Login = () => {
             className="bg-card/50 backdrop-blur-sm border border-border rounded-2xl p-8"
           >
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Error message */}
-              {error && (
-                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-                  {error}
-                </div>
-              )}
-
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium text-foreground">
-                  Email
+                <label htmlFor="username" className="text-sm font-medium text-foreground">
+                  Username
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="username"
+                    type="text"
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="pl-10 bg-background/50 border-border/50 focus:border-primary"
-                    disabled={isPending}
-                    required
                   />
                 </div>
               </div>
@@ -112,8 +104,6 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 bg-background/50 border-border/50 focus:border-primary"
-                    disabled={isPending}
-                    required
                   />
                 </div>
               </div>
@@ -121,28 +111,17 @@ const Login = () => {
               <Button
                 type="submit"
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                disabled={isPending}
               >
-                {isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    Sign In
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
+                Sign In
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </form>
 
             <div className="mt-6 pt-6 border-t border-border/50 text-center">
               <button
                 type="button"
-                onClick={() => navigate("/onboarding")}
+                onClick={() => navigate("/")}
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                disabled={isPending}
               >
                 Don't have an account? Get started →
               </button>

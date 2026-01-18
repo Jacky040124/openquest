@@ -1,105 +1,72 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import SelectionCard from '@/components/SelectionCard';
-import {
-  Bug, Sparkles, FileText, Wrench, Shield, Zap,
-  TestTube, Accessibility, Package, GitBranch, Trash2, Palette
-} from 'lucide-react';
-import type { IssueInterest } from '@/types/api';
+import { Bug, Sparkles, FileText, Wrench, Shield, Zap, Plus } from 'lucide-react';
 
-// Issue interests matching backend IssueInterest enum
-const issueInterests: {
-  id: IssueInterest;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-}[] = [
+const issueTypes = [
   {
-    id: 'bug_fix',
+    id: 'Bug Fixes',
     title: 'Bug Fixes',
     description: 'Fix existing issues and improve stability',
     icon: <Bug className="w-6 h-6" />,
   },
   {
-    id: 'feature',
-    title: 'New Features',
-    description: 'Build new functionality from scratch',
+    id: 'Feature Development',
+    title: 'Feature Development',
+    description: 'Build new functionality and capabilities',
     icon: <Sparkles className="w-6 h-6" />,
   },
   {
-    id: 'enhancement',
-    title: 'Enhancements',
-    description: 'Improve existing features and capabilities',
-    icon: <Zap className="w-6 h-6" />,
-  },
-  {
-    id: 'documentation',
+    id: 'Documentation',
     title: 'Documentation',
     description: 'Improve docs, tutorials, and examples',
     icon: <FileText className="w-6 h-6" />,
   },
   {
-    id: 'refactor',
+    id: 'Refactoring',
     title: 'Refactoring',
     description: 'Improve code quality and maintainability',
     icon: <Wrench className="w-6 h-6" />,
   },
   {
-    id: 'testing',
-    title: 'Testing',
-    description: 'Add or improve test coverage',
-    icon: <TestTube className="w-6 h-6" />,
-  },
-  {
-    id: 'security',
+    id: 'Security',
     title: 'Security',
     description: 'Fix vulnerabilities and improve security',
     icon: <Shield className="w-6 h-6" />,
   },
   {
-    id: 'optimization',
-    title: 'Optimization',
-    description: 'Improve performance and efficiency',
+    id: 'Performance',
+    title: 'Performance',
+    description: 'Optimize speed and resource usage',
     icon: <Zap className="w-6 h-6" />,
-  },
-  {
-    id: 'accessibility',
-    title: 'Accessibility',
-    description: 'Make apps more accessible to everyone',
-    icon: <Accessibility className="w-6 h-6" />,
-  },
-  {
-    id: 'ui_ux',
-    title: 'UI/UX',
-    description: 'Improve user interface and experience',
-    icon: <Palette className="w-6 h-6" />,
-  },
-  {
-    id: 'dependency',
-    title: 'Dependencies',
-    description: 'Update and manage dependencies',
-    icon: <Package className="w-6 h-6" />,
-  },
-  {
-    id: 'ci_cd',
-    title: 'CI/CD',
-    description: 'Improve build and deployment pipelines',
-    icon: <GitBranch className="w-6 h-6" />,
-  },
-  {
-    id: 'cleanup',
-    title: 'Cleanup',
-    description: 'Remove dead code and technical debt',
-    icon: <Trash2 className="w-6 h-6" />,
   },
 ];
 
 const IssueTypesStep = () => {
-  const { preferences, toggleIssueInterest, nextStep, prevStep } = usePreferencesStore();
+  const { preferences, toggleIssueType, nextStep, prevStep } = usePreferencesStore();
+  const [otherInput, setOtherInput] = useState('');
+  const [customTypes, setCustomTypes] = useState<{ id: string; title: string }[]>([]);
+
+  const handleAddCustom = () => {
+    if (otherInput.trim() && !customTypes.find(t => t.title.toLowerCase() === otherInput.trim().toLowerCase())) {
+      const customValue = otherInput.trim();
+      setCustomTypes([...customTypes, { id: customValue, title: customValue }]);
+      toggleIssueType(customValue);
+      setOtherInput('');
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddCustom();
+    }
+  };
 
   return (
     <motion.div
-      className="max-w-3xl mx-auto"
+      className="max-w-2xl mx-auto"
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
@@ -112,27 +79,63 @@ const IssueTypesStep = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {issueInterests.map((type, index) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {issueTypes.map((type, index) => (
           <motion.div
             key={type.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
+            transition={{ delay: index * 0.08 }}
           >
             <SelectionCard
               title={type.title}
               description={type.description}
               icon={type.icon}
-              selected={preferences.issue_interests.includes(type.id)}
-              onClick={() => toggleIssueInterest(type.id)}
+              selected={preferences.issueTypes.includes(type.id)}
+              onClick={() => toggleIssueType(type.id)}
+            />
+          </motion.div>
+        ))}
+        {customTypes.map((type, index) => (
+          <motion.div
+            key={type.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: (issueTypes.length + index) * 0.08 }}
+          >
+            <SelectionCard
+              title={type.title}
+              description="Custom issue type"
+              selected={preferences.issueTypes.includes(type.id)}
+              onClick={() => toggleIssueType(type.id)}
             />
           </motion.div>
         ))}
       </div>
 
-      <div className="text-center mt-6 text-sm text-muted-foreground">
-        {preferences.issue_interests.length} type{preferences.issue_interests.length !== 1 ? 's' : ''} selected
+      <div className="mt-6 flex justify-center">
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-sm">Other:</span>
+          <input
+            type="text"
+            value={otherInput}
+            onChange={(e) => setOtherInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Enter issue type..."
+            className="bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-44"
+          />
+          <button
+            onClick={handleAddCustom}
+            disabled={!otherInput.trim()}
+            className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="text-center mt-4 text-sm text-muted-foreground">
+        {preferences.issueTypes.length} type{preferences.issueTypes.length !== 1 ? 's' : ''} selected
       </div>
 
       <div className="flex justify-between mt-8">
@@ -141,9 +144,9 @@ const IssueTypesStep = () => {
         </button>
         <button
           onClick={nextStep}
-          disabled={preferences.issue_interests.length === 0}
+          disabled={preferences.issueTypes.length === 0}
           className={`btn-primary ${
-            preferences.issue_interests.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
+            preferences.issueTypes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
           Continue
