@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ContributionHeatmap from '@/components/dashboard/ContributionHeatmap';
-import { useIssues } from '@/hooks/useIssues';
 import logo from "@/assets/logo.png";
 
 const Issues = () => {
@@ -22,14 +21,20 @@ const Issues = () => {
     ? repoName.split('/')
     : ['', repoName];
 
-  // Fetch issues with localStorage caching
-  const filter: IssueFilterDTO = {
-    repo_url: repoUrl,
-    tags: ['good first issue'], // Match the count which only counts "good first issue"
-    exclude_assigned: true, // Match the count which excludes assigned issues
-    limit: 20,
-  };
-  const { data: issues, isLoading, error } = useIssues(filter);
+  // Fetch issues
+  const { data: issues, isLoading, error } = useQuery<IssueDTO[]>({
+    queryKey: ['issues', repoUrl],
+    queryFn: async () => {
+      const filter: IssueFilterDTO = {
+        repo_url: repoUrl,
+        tags: ['good first issue'], // Match the count which only counts "good first issue"
+        exclude_assigned: true, // Match the count which excludes assigned issues
+        limit: 20,
+      };
+      return api.post<IssueDTO[]>('/issues/search', filter);
+    },
+    enabled: !!repoUrl,
+  });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

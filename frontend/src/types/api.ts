@@ -5,6 +5,7 @@
 export interface RegisterDTO {
   email: string;
   password: string;
+  username: string;
 }
 
 export interface LoginDTO {
@@ -22,7 +23,12 @@ export interface TokenDTO {
 export interface UserResponseDTO {
   id: string;
   email: string;
+  username: string;
   created_at?: string;
+}
+
+export interface UpdateUserDTO {
+  username?: string;
 }
 
 // ============================================
@@ -128,15 +134,15 @@ export interface SkillDTO {
 }
 
 export interface UserPreferenceCreateDTO {
+  user_name?: string;
   languages: string[];
   skills: SkillInputDTO[];
   project_interests: ProjectInterest[];
   issue_interests: IssueInterest[];
-  github_token?: string;
-  github_username?: string;
 }
 
 export interface UserPreferenceUpdateDTO {
+  user_name?: string;
   languages?: string[];
   skills?: SkillInputDTO[];
   project_interests?: ProjectInterest[];
@@ -146,12 +152,11 @@ export interface UserPreferenceUpdateDTO {
 export interface UserPreferenceDTO {
   id: string;
   user_id: string;
+  user_name?: string;
   languages: string[];
   skills: SkillDTO[];
   project_interests: string[];
   issue_interests: string[];
-  github_username?: string;
-  github_connected: boolean;
   created_at: string;
   updated_at: string;
 }

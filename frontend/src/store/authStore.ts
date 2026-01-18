@@ -8,17 +8,12 @@ interface AuthState {
   user: UserResponseDTO | null;
   isLoading: boolean;
   error: string | null;
-  githubConnected: boolean;
-  githubUsername: string | null;
-  githubToken: string | null;
 
   // Actions
   setUser: (user: UserResponseDTO) => void;
   setTokens: (tokens: TokenDTO) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  setGitHubConnected: (connected: boolean, username: string | null, token?: string | null) => void;
-  clearGitHubToken: () => void;
   logout: () => void;
   checkAuth: () => boolean;
 }
@@ -30,9 +25,6 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isLoading: false,
       error: null,
-      githubConnected: false,
-      githubUsername: null,
-      githubToken: null,
 
       setUser: (user: UserResponseDTO) =>
         set({ user, isLoggedIn: true, error: null }),
@@ -48,14 +40,9 @@ export const useAuthStore = create<AuthState>()(
 
       setError: (error: string | null) => set({ error, isLoading: false }),
 
-      setGitHubConnected: (connected: boolean, username: string | null, token?: string | null) =>
-        set({ githubConnected: connected, githubUsername: username, githubToken: token ?? null }),
-
-      clearGitHubToken: () => set({ githubToken: null }),
-
       logout: () => {
         clearTokens();
-        set({ isLoggedIn: false, user: null, error: null, githubConnected: false, githubUsername: null, githubToken: null });
+        set({ isLoggedIn: false, user: null, error: null });
       },
 
       checkAuth: () => {
@@ -70,13 +57,9 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      // Note: githubToken is intentionally NOT persisted for security
-      // It's only stored temporarily in memory during onboarding
       partialize: (state) => ({
         isLoggedIn: state.isLoggedIn,
         user: state.user,
-        githubConnected: state.githubConnected,
-        githubUsername: state.githubUsername,
       }),
     }
   )

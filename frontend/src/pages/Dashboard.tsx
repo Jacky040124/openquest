@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, Search, Filter, RefreshCw, Code2, Layers, Target, Folder, Edit2, ArrowUpDown, Loader2, Wrench, Github, CheckCircle2, Link } from 'lucide-react';
+import { User, LogOut, Search, Filter, RefreshCw, Code2, Layers, Target, Folder, Edit2, ArrowUpDown, Loader2, Wrench, Trophy, Github, CheckCircle2, Link } from 'lucide-react';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { useAuthStore } from '@/store/authStore';
 import { useLogout, useUserPreferences } from '@/hooks/useAuth';
@@ -20,6 +20,8 @@ import EditPreferencesDialog from '@/components/dashboard/EditPreferencesDialog'
 import SignOutDialog from '@/components/dashboard/SignOutDialog';
 import XPProgressBar from '@/components/dashboard/XPProgressBar';
 import ProfileLevelSection from '@/components/dashboard/ProfileLevelSection';
+import LeaderboardDialog from '@/components/dashboard/LeaderboardDialog';
+import RanksDialog from '@/components/dashboard/RanksDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -81,6 +83,8 @@ const Dashboard = () => {
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [sortBy, setSortBy] = useState<'stars' | 'issues' | 'forks'>('stars');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showRanks, setShowRanks] = useState(false);
 
   const filteredAndSortedRepos = useMemo(() => {
     if (!repos) return [];
@@ -173,8 +177,17 @@ const Dashboard = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            className="flex items-center gap-2"
           >
-            <XPProgressBar />
+            <XPProgressBar onOpenRanks={() => setShowRanks(true)} />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowLeaderboard(true)}
+              className="text-muted-foreground hover:text-yellow-400 transition-colors"
+            >
+              <Trophy className="w-5 h-5" />
+            </Button>
           </motion.div>
 
           <div className="flex items-center gap-2">
@@ -196,7 +209,7 @@ const Dashboard = () => {
                       <User className="w-6 h-6 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">{user?.email || 'Developer'}</h3>
+                      <h3 className="font-semibold">{userPrefs?.user_name || 'Developer'}</h3>
                       <p className="text-muted-foreground text-sm">
                         Open source contributor
                       </p>
@@ -403,7 +416,7 @@ const Dashboard = () => {
             className="mb-8"
           >
             <h1 className="text-3xl font-bold mb-2">
-              Welcome back, <span className="gradient-text">{user?.email?.split('@')[0] || 'Developer'}</span>
+              Welcome back, <span className="gradient-text">{userPrefs?.user_name || 'Developer'}</span>
             </h1>
             <p className="text-muted-foreground">
               Here are some open source projects that match your preferences
@@ -517,6 +530,18 @@ const Dashboard = () => {
         open={showSignOutDialog}
         onOpenChange={setShowSignOutDialog}
         onConfirm={handleLogout}
+      />
+
+      {/* Leaderboard Dialog */}
+      <LeaderboardDialog
+        open={showLeaderboard}
+        onOpenChange={setShowLeaderboard}
+      />
+
+      {/* Ranks Dialog */}
+      <RanksDialog
+        open={showRanks}
+        onOpenChange={setShowRanks}
       />
     </div>
   );
