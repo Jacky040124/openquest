@@ -215,15 +215,21 @@ class GitHubService:
         has_good_first_issues: bool = True,
         limit: int = 10,
     ) -> list[RepoDTO]:
-        """Search repositories based on criteria"""
+        """
+        Search repositories based on criteria.
+        
+        Note: GitHub API uses OR logic for multiple language filters.
+        If languages=['Python', 'JavaScript'], it returns repos in Python OR JavaScript.
+        """
         query_parts = []
 
-        # Add language filters
+        # Add language filters (PRIMARY - if provided, use OR logic)
+        # GitHub API: language:Python language:JavaScript means Python OR JavaScript
         if languages:
             for lang in languages:
                 query_parts.append(f"language:{lang}")
 
-        # Add topic filters
+        # Add topic filters (SECONDARY - only if no language filter or as additional filter)
         if topics:
             for topic in topics:
                 query_parts.append(f"topic:{topic}")
@@ -256,6 +262,15 @@ class GitHubService:
 
         repos = []
         for item in data.get("items", []):
+            repo_language = item.get("language") or "Unknown"
+            
+            # If languages filter was provided, ensure this repo matches
+            # GitHub API might return repos that don't exactly match due to OR logic
+            if languages:
+                languages_lower = [lang.lower() for lang in languages]
+                if repo_language.lower() not in languages_lower:
+                    continue  # Skip repos that don't match user's language preferences
+            
             repos.append(
                 RepoDTO(
                     id=item["id"],
@@ -263,7 +278,7 @@ class GitHubService:
                     full_name=item["full_name"],
                     url=item["html_url"],
                     description=item.get("description"),
-                    language=item.get("language") or "Unknown",
+                    language=repo_language,
                     stars=item.get("stargazers_count", 0),
                     open_issues_count=item.get("open_issues_count", 0),
                     topics=item.get("topics", []),

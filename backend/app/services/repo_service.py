@@ -4,7 +4,7 @@ import logging
 from uuid import UUID
 
 from pydantic import ValidationError
-from sqlalchemy.orm import Session
+from supabase import Client
 
 from ..dao.user_preference_dao import UserPreferenceDAO
 from ..dto.repo_dto import RepoDTO, RepoRecommendQueryDTO
@@ -21,13 +21,13 @@ class RepoService:
     def __init__(
         self,
         github_service: GitHubService,
-        db: Session,
+        supabase: Client,
         openrouter_service: OpenRouterService | None = None,
         prompt_service: PromptService | None = None,
     ):
         self.github_service = github_service
-        self.db = db
-        self.user_preference_dao = UserPreferenceDAO(db)
+        self.supabase = supabase
+        self.user_preference_dao = UserPreferenceDAO(supabase)
         self.openrouter_service = openrouter_service
         self.prompt_service = prompt_service or PromptService()
 
@@ -124,6 +124,22 @@ class RepoService:
         # Parse and validate response
         repos = self._parse_llm_response(response)
 
+        # Filter by language if user has language preferences (PRIMARY requirement)
+        if user_preference and user_preference.languages:
+            languages_lower = [lang.lower() for lang in user_preference.languages]
+            filtered_repos = [
+                repo
+                for repo in repos
+                if repo.language and repo.language.lower() in languages_lower
+            ]
+            if filtered_repos:
+                repos = filtered_repos
+            else:
+                # If no repos match language, log warning but return empty
+                logger.warning(
+                    f"LLM returned no repositories matching user languages: {user_preference.languages}"
+                )
+
         return repos
 
     def _parse_llm_response(self, response: dict) -> list[RepoDTO]:
@@ -192,6 +208,9 @@ class RepoService:
         """
         Get repository recommendations using GitHub API (fallback).
 
+        Language is PRIMARY - if user has language preferences, only return repos in those languages.
+        Other preferences (skills, project interests) are SECONDARY.
+
         Args:
             user_preference: User's preference model (can be None)
             limit: Number of recommendations to request
@@ -199,7 +218,7 @@ class RepoService:
             max_stars: Maximum star count filter (optional)
 
         Returns:
-            List of recommended repositories
+            List of recommended repositories filtered by language (if specified)
         """
         if not user_preference:
             return await self.github_service.search_repos(
@@ -208,26 +227,56 @@ class RepoService:
                 limit=limit,
             )
 
-        # Extract preferences
+        # Extract preferences - LANGUAGE IS PRIMARY
         languages = user_preference.languages or []
         skills = user_preference.skills or []
         project_interests = user_preference.project_interests or []
 
-        # Map skills to topics for GitHub search
-        topics = self._skills_to_topics(skills)
-
-        # Add project interests as topics
-        topics.extend(self._project_interests_to_topics(project_interests))
-
-        # Search for repositories
-        return await self.github_service.search_repos(
+        # If user has language preferences, they are MANDATORY
+        # Search for repositories - language is required if specified
+        repos = await self.github_service.search_repos(
             languages=languages if languages else None,
-            topics=topics if topics else None,
+            topics=None,  # Topics are secondary, only use if no language filter
             min_stars=min_stars,
             max_stars=max_stars,
             has_good_first_issues=True,
-            limit=limit,
+            limit=limit * 2,  # Fetch more to filter by secondary criteria
         )
+
+        # Filter results to ensure language match (PRIMARY requirement)
+        if languages:
+            # Normalize language names for comparison
+            languages_lower = [lang.lower() for lang in languages]
+            filtered_repos = [
+                repo
+                for repo in repos
+                if repo.language and repo.language.lower() in languages_lower
+            ]
+            repos = filtered_repos
+
+        # If we have enough repos after language filtering, apply secondary filters
+        if len(repos) >= limit:
+            # Map skills to topics for secondary filtering
+            topics = self._skills_to_topics(skills)
+            topics.extend(self._project_interests_to_topics(project_interests))
+
+            # Score repos by secondary criteria (topics match)
+            if topics:
+                scored_repos = []
+                for repo in repos:
+                    score = 0
+                    repo_topics_lower = [t.lower() for t in repo.topics]
+                    for topic in topics:
+                        if topic.lower() in repo_topics_lower:
+                            score += 1
+                    scored_repos.append((score, repo))
+
+                # Sort by secondary score (descending), then by stars
+                scored_repos.sort(key=lambda x: (x[0], x[1].stars), reverse=True)
+                repos = [repo for _, repo in scored_repos]
+
+        # Return top N repos
+        return repos[:limit]
 
     def _skills_to_topics(self, skills: list[dict]) -> list[str]:
         """
