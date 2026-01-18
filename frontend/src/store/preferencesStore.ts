@@ -37,7 +37,8 @@ const initialPreferences: Preferences = {
   project_interests: [],
 };
 
-// Total steps after removing ExperienceStep: Welcome(0), Languages(1), Skills(2), IssueTypes(3), ProjectTypes(4), Summary(5), CreateAccount(6)
+// Total steps: Welcome(0), Languages(1), Skills(2), IssueTypes(3), ProjectTypes(4), Summary(5), CreateAccount(6)
+// GitHub OAuth is done after signup in Dashboard
 const TOTAL_STEPS = 6;
 
 export const usePreferencesStore = create<PreferencesState>((set, get) => ({

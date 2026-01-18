@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 const CreateAccountStep = () => {
   const navigate = useNavigate();
   const { error: authError, setError } = useAuthStore();
-  const { preferences, getSkillsForApi } = usePreferencesStore();
+  const { preferences, getSkillsForApi, resetPreferences } = usePreferencesStore();
   const registerMutation = useRegister();
   const loginMutation = useLogin();
   const createPrefsMutation = useCreatePreferences();
@@ -68,7 +68,7 @@ const CreateAccountStep = () => {
       // 2. Login to get tokens
       await loginMutation.mutateAsync({ email: email.trim(), password });
 
-      // 3. Create preferences with user_name
+      // 3. Create preferences (GitHub OAuth is done after signup in Dashboard)
       await createPrefsMutation.mutateAsync({
         user_name: username.trim(),
         languages: preferences.languages,
@@ -77,7 +77,10 @@ const CreateAccountStep = () => {
         issue_interests: preferences.issue_interests,
       });
 
-      // 4. Navigate to dashboard
+      // 4. Reset preferences store (clear onboarding state)
+      resetPreferences();
+
+      // 5. Navigate to dashboard
       navigate('/dashboard');
     } catch (err) {
       // Errors are handled by the mutation hooks

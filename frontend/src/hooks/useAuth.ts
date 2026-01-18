@@ -37,8 +37,9 @@ const authApi = {
 };
 
 // Login hook
+// Note: Does NOT auto-navigate to allow for post-login actions (like creating preferences)
+// Caller should handle navigation after login completes
 export function useLogin() {
-  const navigate = useNavigate();
   const { setTokens, setUser, setLoading, setError } = useAuthStore();
 
   return useMutation({
@@ -52,7 +53,7 @@ export function useLogin() {
     onSuccess: (user) => {
       setUser(user);
       setLoading(false);
-      navigate('/dashboard');
+      // Note: Navigation removed - caller handles it after any post-login actions
     },
     onError: (error: ApiError) => {
       const message =

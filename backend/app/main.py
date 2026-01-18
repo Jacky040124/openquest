@@ -1,5 +1,7 @@
 """OpenQuest Backend - FastAPI Application Entry Point"""
 
+import logging
+import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
@@ -10,22 +12,66 @@ from fastapi.responses import JSONResponse
 from .config import get_settings
 from .controllers.agent_controller import router as agent_router
 from .controllers.auth_controller import router as auth_router
-from .controllers.contribution_controller import router as contribution_router
 from .controllers.github_oauth_controller import router as oauth_router
 from .controllers.issue_controller import router as issue_router
 from .controllers.repo_controller import router as repo_router
+
+
+def setup_logging():
+    """Configure logging for the application"""
+    settings = get_settings()
+
+    # Set log level based on debug mode
+    log_level = logging.DEBUG if settings.debug else logging.INFO
+
+    # Create formatter
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+
+    # Remove existing handlers
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+
+    # Add console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(log_level)
+    console_handler.setFormatter(formatter)
+    root_logger.addHandler(console_handler)
+
+    # Configure specific loggers for agent components
+    agent_loggers = [
+        "agent",
+        "agent.dao",
+        "agent.openrouter",
+    ]
+    for logger_name in agent_loggers:
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(log_level)
+        logger.propagate = True
+
+    logging.info(f"Logging configured with level: {logging.getLevelName(log_level)}")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler"""
     # Startup
+    setup_logging()
     settings = get_settings()
-    print(f"Starting {settings.app_name}...")
-    print(f"Debug mode: {settings.debug}")
+    logging.info(f"Starting {settings.app_name}...")
+    logging.info(f"Debug mode: {settings.debug}")
+    logging.info(f"E2B configured: {bool(settings.e2b_api_key)}")
+    logging.info(f"OpenRouter configured: {bool(settings.openrouter_api_key)}")
+    logging.info(f"OpenRouter model: {settings.openrouter_model}")
     yield
     # Shutdown
-    print("Shutting down...")
+    logging.info("Shutting down...")
 
 
 def create_app() -> FastAPI:

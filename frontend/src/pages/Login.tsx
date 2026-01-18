@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
@@ -11,9 +11,17 @@ import logo from "@/assets/logo.png";
 const Login = () => {
   const navigate = useNavigate();
   const { mutate: login, isPending } = useLogin();
-  const { error } = useAuthStore();
+  const { error, isLoggedIn } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // Navigate to dashboard after successful login
+  // (useLogin no longer auto-navigates to support the signup flow)
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate("/dashboard");
+    }
+  }, [isLoggedIn, navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

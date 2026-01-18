@@ -109,42 +109,63 @@ class AgentService:
             SandboxError: If sandbox creation fails
             CloneError: If git clone fails
         """
+        logger.info(f"[SANDBOX] start_sandbox called with repo_url={repo_url}")
         settings = get_settings()
 
         if not settings.e2b_api_key:
+            logger.error("[SANDBOX] E2B API key is not configured!")
             raise SandboxError("E2B API key is not configured")
+
+        logger.info(
+            f"[SANDBOX] E2B API key present (length={len(settings.e2b_api_key)})"
+        )
+        logger.info(f"[SANDBOX] Sandbox timeout: {settings.e2b_sandbox_timeout}s")
 
         # Set E2B API key as environment variable (SDK reads from env)
         os.environ["E2B_API_KEY"] = settings.e2b_api_key
 
         try:
-            logger.info("Creating E2B sandbox", extra={"repo_url": repo_url})
+            logger.info("[SANDBOX] Creating E2B sandbox...")
             # Use Sandbox.create() class method which accepts timeout
             self.sandbox = Sandbox.create(timeout=settings.e2b_sandbox_timeout)
             logger.info(
-                "Sandbox created",
-                extra={"sandbox_id": self.sandbox.sandbox_id},
+                f"[SANDBOX] Sandbox created successfully: id={self.sandbox.sandbox_id}"
             )
         except Exception as e:
-            logger.error("Failed to create sandbox", extra={"error": str(e)})
+            import traceback
+
+            logger.error(f"[SANDBOX] Failed to create sandbox: {type(e).__name__}: {e}")
+            logger.error(f"[SANDBOX] Traceback: {traceback.format_exc()}")
             raise SandboxError(f"Failed to create sandbox: {e}")
 
         # Clone the repository
         try:
-            logger.info("Cloning repository", extra={"repo_url": repo_url})
-            result = self.sandbox.commands.run(
-                f"git clone {repo_url} {self.repo_path}",
-                timeout=120,
-            )
+            logger.info(f"[SANDBOX] Cloning repository: {repo_url}")
+            clone_cmd = f"git clone {repo_url} {self.repo_path}"
+            logger.debug(f"[SANDBOX] Clone command: {clone_cmd}")
+
+            result = self.sandbox.commands.run(clone_cmd, timeout=120)
+            logger.info(f"[SANDBOX] Clone exit code: {result.exit_code}")
+
+            if result.stdout:
+                logger.debug(f"[SANDBOX] Clone stdout: {result.stdout[:500]}")
+            if result.stderr:
+                logger.debug(f"[SANDBOX] Clone stderr: {result.stderr[:500]}")
 
             if result.exit_code != 0:
+                logger.error(
+                    f"[SANDBOX] Clone failed with exit code {result.exit_code}"
+                )
                 raise CloneError(repo_url, result.stderr or "Unknown error")
 
-            logger.info("Repository cloned successfully")
+            logger.info("[SANDBOX] Repository cloned successfully")
         except CloneError:
             raise
         except Exception as e:
-            logger.error("Clone failed", extra={"error": str(e)})
+            import traceback
+
+            logger.error(f"[SANDBOX] Clone failed: {type(e).__name__}: {e}")
+            logger.error(f"[SANDBOX] Traceback: {traceback.format_exc()}")
             raise CloneError(repo_url, str(e))
 
     async def _start_sandbox_with_fork(self, fork_url: str, upstream_url: str) -> None:
@@ -496,25 +517,38 @@ class AgentService:
         Raises:
             Various exceptions for different failure modes
         """
+        logger.info(
+            f"[AGENT] Starting analyze_issue_stream: repo={request.repo_url}, "
+            f"issue=#{request.issue_number}: {request.issue_title}"
+        )
+        logger.debug(f"[AGENT] Issue body length: {len(request.issue_body)} chars")
+
         try:
             # Start sandbox and clone repo
+            logger.info("[AGENT] Yielding CLONING status event...")
             yield AgentStatusEvent(
                 step=AgentStep.CLONING,
                 message=f"Starting sandbox and cloning {request.repo_url}...",
             )
+            logger.info("[AGENT] CLONING event yielded")
 
+            logger.info("[AGENT] Starting sandbox...")
             await self.start_sandbox(request.repo_url)
+            logger.info("[AGENT] Sandbox started and repo cloned")
 
             yield AgentStatusEvent(
                 step=AgentStep.CLONING,
                 message="Repository cloned successfully",
             )
+            logger.info("[AGENT] Clone success event yielded")
 
             # Start analysis
+            logger.info("[AGENT] Yielding ANALYZING status event...")
             yield AgentStatusEvent(
                 step=AgentStep.ANALYZING,
                 message="Analyzing issue...",
             )
+            logger.info("[AGENT] ANALYZING event yielded")
 
             # Build initial messages
             messages: list[dict[str, Any]] = [
@@ -534,8 +568,9 @@ Start by exploring the codebase structure, then find relevant files, analyze the
             ]
 
             # Agent loop
+            logger.info(f"[AGENT] Starting agent loop (max_turns={self.max_turns})")
             for turn in range(self.max_turns):
-                logger.info(f"Agent turn {turn + 1}/{self.max_turns}")
+                logger.info(f"[AGENT] === Turn {turn + 1}/{self.max_turns} ===")
 
                 # Check if we're on the last turn - force LLM to conclude
                 is_final_turn = turn == self.max_turns - 1
@@ -555,9 +590,12 @@ Even if your analysis is incomplete, provide the best analysis you can with the 
 Include what you've learned and what areas still need investigation.""",
                         }
                     )
-                    logger.info("Final turn - forcing LLM to conclude")
+                    logger.info("[AGENT] Final turn - forcing LLM to conclude")
 
                 try:
+                    logger.info(
+                        f"[AGENT] Calling LLM with {len(current_messages)} messages..."
+                    )
                     response = await self.openrouter.generate_with_tools(
                         messages=current_messages,
                         tools=AGENT_TOOLS
@@ -566,39 +604,57 @@ Include what you've learned and what areas still need investigation.""",
                         temperature=0.7,
                         max_tokens=4096,
                     )
+                    logger.info("[AGENT] LLM call completed successfully")
                 except Exception as e:
-                    logger.error("LLM call failed", extra={"error": str(e)})
+                    logger.error(f"[AGENT] LLM call failed: {type(e).__name__}: {e}")
+                    import traceback
+
+                    logger.error(f"[AGENT] Traceback: {traceback.format_exc()}")
                     raise LLMError(f"LLM API call failed: {e}")
 
                 # Get text content if any
                 text_content = self.openrouter.get_text_content(response)
+                logger.debug(
+                    f"[AGENT] Text content length: {len(text_content) if text_content else 0}"
+                )
                 if text_content:
+                    logger.info("[AGENT] Yielding thinking event...")
                     yield AgentThinkingEvent(content=text_content)
+                    logger.info("[AGENT] Thinking event yielded")
 
                 # Check finish reason
                 finish_reason = self.openrouter.get_finish_reason(response)
+                logger.info(f"[AGENT] Finish reason: {finish_reason}")
 
                 if finish_reason == "stop" or is_final_turn:
                     # Agent finished - extract solution
+                    logger.info("[AGENT] Agent finished - extracting solution...")
                     yield AgentStatusEvent(
                         step=AgentStep.PROPOSING,
                         message="Preparing solution...",
                     )
 
                     solution = self._parse_solution(text_content or "")
+                    logger.info(
+                        f"[AGENT] Solution parsed. Keys: {list(solution.keys())}"
+                    )
+                    logger.info("[AGENT] Yielding solution event...")
                     yield AgentSolutionEvent(data=solution)
+                    logger.info("[AGENT] Solution event yielded")
                     yield AgentStatusEvent(
                         step=AgentStep.DONE,
                         message="Analysis complete",
                     )
+                    logger.info("[AGENT] Analysis complete - returning from generator")
                     return
 
                 # Process tool calls
                 tool_calls = self.openrouter.parse_tool_calls(response)
+                logger.info(f"[AGENT] Parsed {len(tool_calls)} tool calls")
 
                 if not tool_calls:
                     # No tool calls and not stopped - might be an issue
-                    logger.warning("No tool calls and not stopped")
+                    logger.warning("[AGENT] No tool calls and not stopped - continuing")
                     continue
 
                 # Add assistant message to conversation
@@ -607,7 +663,10 @@ Include what you've learned and what areas still need investigation.""",
 
                 # Execute each tool and add results
                 tool_results = []
-                for tc in tool_calls:
+                for i, tc in enumerate(tool_calls):
+                    logger.info(
+                        f"[AGENT] Executing tool {i+1}/{len(tool_calls)}: {tc['name']}"
+                    )
                     yield AgentToolEvent(
                         tool_name=tc["name"],
                         tool_input=tc["arguments"],
@@ -615,7 +674,11 @@ Include what you've learned and what areas still need investigation.""",
 
                     try:
                         result = self.execute_tool(tc["name"], tc["arguments"])
+                        logger.debug(
+                            f"[AGENT] Tool {tc['name']} returned {len(result)} chars"
+                        )
                     except ToolExecutionError as e:
+                        logger.error(f"[AGENT] Tool {tc['name']} failed: {e.message}")
                         result = f"Error: {e.message}"
 
                     yield AgentToolEvent(
@@ -636,18 +699,26 @@ Include what you've learned and what areas still need investigation.""",
 
                 # Add tool results to messages
                 messages.extend(tool_results)
+                logger.info(
+                    f"[AGENT] Added {len(tool_results)} tool results to messages"
+                )
 
             # This should not be reached due to is_final_turn logic above
-            logger.warning("Reached end of loop unexpectedly")
+            logger.warning("[AGENT] Reached end of loop unexpectedly")
 
         except Exception as e:
-            logger.error("Analysis failed", extra={"error": str(e)})
+            import traceback
+
+            logger.error(f"[AGENT] Analysis failed: {type(e).__name__}: {e}")
+            logger.error(f"[AGENT] Traceback: {traceback.format_exc()}")
             yield AgentErrorEvent(message=str(e))
             raise
 
         finally:
             # Always cleanup - session data is persisted to Supabase
+            logger.info("[AGENT] Cleaning up sandbox...")
             self.cleanup()
+            logger.info("[AGENT] Cleanup complete")
 
     def _parse_solution(self, text: str) -> dict[str, Any]:
         """Parse solution from agent's final response"""

@@ -13,6 +13,7 @@ import CreateAccountStep from '@/components/steps/CreateAccountStep';
 import logo from "@/assets/logo.png";
 
 // Steps: Welcome(0), Languages(1), Skills(2), IssueTypes(3), ProjectTypes(4), Summary(5), CreateAccount(6)
+// GitHub OAuth is done after signup in Dashboard
 const steps = [
   WelcomeStep,
   LanguagesStep,
@@ -64,7 +65,7 @@ const Index = () => {
         </motion.div>
       </header>
 
-      {/* Step Indicator - hide on welcome and account creation steps */}
+      {/* Step Indicator - show only for preference steps (1-5), hide on welcome and account creation */}
       {currentStep > 0 && currentStep < 6 && (
         <motion.div
           className="relative z-10 py-4 flex-shrink-0"
