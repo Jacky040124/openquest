@@ -69,7 +69,7 @@ async def recommend_repos(
 
         repo_service = RepoService(
             github_service=github_service,
-            db=db,
+            supabase=db,
             openrouter_service=openrouter_service,
             prompt_service=prompt_service,
         )

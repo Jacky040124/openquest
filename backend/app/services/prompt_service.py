@@ -274,22 +274,32 @@ Respond with ONLY the JSON array, no additional text or explanation."""
     # System prompt for issue ranking
     ISSUE_RANKING_SYSTEM_PROMPT = """You are an expert at matching developers with suitable GitHub issues for contribution.
 
-Your role is to rank and filter GitHub issues based on:
-1. The user's programming languages and skills
-2. Their skill level (beginner, intermediate, advanced, expert)
-3. Their issue type preferences (bug fixes, features, documentation, etc.)
-4. Issue difficulty and complexity
-5. How well the issue matches their interests
+Your role is to rank GitHub issues based on difficulty matching the user's skill level.
 
-You will receive a list of issues from a repository and should return them ranked by relevance, with the most suitable issues first."""
+**PRIMARY RANKING CRITERIA (in order of priority):**
+1. **DIFFICULTY MATCH** - The issue difficulty should match the user's skill level:
+   - Beginner: Look for "good first issue", "easy", "beginner-friendly", simple documentation, typo fixes
+   - Intermediate: Moderate complexity, requires understanding of codebase, bug fixes, small features
+   - Advanced: Complex features, architectural changes, performance optimization
+   - Expert: Core system changes, security-critical, requires deep domain knowledge
+
+2. **Issue Type Preferences** - Match user's preferred issue types (bug fixes, features, documentation, etc.)
+
+**IMPORTANT RULES:**
+- Language is NOT a ranking factor (the repo is already selected based on language match)
+- You MUST return at least 3 issues minimum, even if they are not a perfect match
+- Rank ALL provided issues - do not filter any out, just order them by relevance
+- If user is a beginner, prioritize issues with helpful labels like "good first issue", "help wanted"
+
+You will receive a list of issues and should return them ALL ranked by relevance."""
 
     # User prompt template for issue ranking
-    ISSUE_RANKING_PROMPT_TEMPLATE = """Rank the following GitHub issues from the repository "$repo_name" based on the user's preferences.
+    ISSUE_RANKING_PROMPT_TEMPLATE = """Rank the following GitHub issues from the repository "$repo_name" based on the user's skill level and preferences.
 
 ## User Profile
 
-### Programming Languages
-$languages
+### Skill Level
+$skill_level
 
 ### Technical Skills (with proficiency levels)
 $skills
@@ -301,19 +311,26 @@ $issue_interests
 
 $issues_list
 
-## Instructions
+## Ranking Instructions
 
-1. Analyze each issue's title, labels, and context
-2. Rank issues by how well they match the user's:
-   - Programming languages and skills
-   - Skill level (prioritize issues appropriate for their familiarity)
-   - Issue type preferences
-   - Overall fit for contribution
-3. Return the top $limit issues, ranked from most to least suitable
+**PRIORITY 1: Difficulty Match**
+Match issue difficulty to user's skill level:
+- If user is BEGINNER: Prioritize "good first issue", "easy", documentation, typo fixes
+- If user is INTERMEDIATE: Prioritize moderate bugs, small features, test improvements
+- If user is ADVANCED/EXPERT: Prioritize complex features, refactoring, performance issues
+
+**PRIORITY 2: Issue Type Match**
+After difficulty, consider the user's issue type preferences.
+
+**CRITICAL RULES:**
+- You MUST return at least 3 issues, preferably more
+- Rank ALL issues provided - do not filter any out
+- Order from most suitable to least suitable
+- Even if no perfect match exists, return issues ranked by best available fit
 
 ## Required Output Format
 
-Return a JSON object with a "ranked_issue_ids" array containing the issue IDs in order of relevance (most relevant first):
+Return a JSON object with a "ranked_issue_ids" array containing ALL issue IDs in order of relevance (most relevant first):
 
 ```json
 {
@@ -321,7 +338,7 @@ Return a JSON object with a "ranked_issue_ids" array containing the issue IDs in
 }
 ```
 
-Only include issue IDs that are suitable for the user. If fewer than $limit issues are suitable, return only those."""
+Return up to $limit issues. You MUST include at least 3 issues in your response."""
 
     def build_issue_ranking_prompt(
         self,
@@ -344,13 +361,13 @@ Only include issue IDs that are suitable for the user. If fewer than $limit issu
         """
         # Format user preferences or use defaults
         if user_preference:
-            languages = self._format_languages(user_preference.languages)
+            skill_level = self._get_overall_skill_level(user_preference.skills)
             skills = self._format_skills(user_preference.skills)
             issue_interests = self._format_issue_interests(
                 user_preference.issue_interests
             )
         else:
-            languages = "No specific preference"
+            skill_level = "BEGINNER (default - no skills specified)"
             skills = "No specific skills provided"
             issue_interests = "Open to all issue types"
 
@@ -371,7 +388,7 @@ Only include issue IDs that are suitable for the user. If fewer than $limit issu
         user_template = Template(self.ISSUE_RANKING_PROMPT_TEMPLATE)
         user_prompt = user_template.substitute(
             repo_name=repo_name,
-            languages=languages,
+            skill_level=skill_level,
             skills=skills,
             issue_interests=issue_interests,
             issues_list=issues_text,
@@ -379,6 +396,36 @@ Only include issue IDs that are suitable for the user. If fewer than $limit issu
         )
 
         return self.ISSUE_RANKING_SYSTEM_PROMPT, user_prompt
+
+    def _get_overall_skill_level(self, skills: list[dict] | None) -> str:
+        """
+        Determine the user's overall skill level based on their skills.
+
+        Returns the highest skill level found, or BEGINNER if no skills.
+        """
+        if not skills:
+            return "BEGINNER (no skills specified)"
+
+        # Priority order: expert > advanced > intermediate > beginner
+        level_priority = {"expert": 4, "advanced": 3, "intermediate": 2, "beginner": 1}
+        level_descriptions = {
+            "expert": "EXPERT - Can handle complex, core system changes",
+            "advanced": "ADVANCED - Comfortable with complex features and refactoring",
+            "intermediate": "INTERMEDIATE - Can handle moderate bugs and small features",
+            "beginner": "BEGINNER - Best suited for good-first-issues and simple tasks",
+        }
+
+        highest_level = "beginner"
+        highest_priority = 0
+
+        for skill in skills:
+            familiarity = skill.get("familiarity", "beginner").lower()
+            priority = level_priority.get(familiarity, 1)
+            if priority > highest_priority:
+                highest_priority = priority
+                highest_level = familiarity
+
+        return level_descriptions.get(highest_level, level_descriptions["beginner"])
 
     def get_issue_ranking_json_schema(self) -> dict:
         """Get JSON schema for issue ranking response"""

@@ -8,7 +8,7 @@ import type { GitHubStatusDTO, GitHubAuthorizeResponse } from '@/types/api';
 export const useGitHubStatus = () => {
   return useQuery<GitHubStatusDTO>({
     queryKey: ['github-status'],
-    queryFn: () => api.get<GitHubStatusDTO>('/auth/me/github/status'),
+    queryFn: () => api.get<GitHubStatusDTO>('/auth/me/github'),
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -57,7 +57,7 @@ export const useDisconnectGitHub = () => {
 
   return useMutation({
     mutationFn: async () => {
-      await api.delete('/auth/me/github/disconnect');
+      await api.delete('/auth/me/github');
     },
     onSuccess: () => {
       // Invalidate GitHub status to refetch

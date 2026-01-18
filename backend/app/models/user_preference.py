@@ -245,6 +245,12 @@ class UserPreference(Base):
         default=list,
         comment="Issue types from IssueInterest enum (bug_fix, optimization, etc.)",
     )
+    user_name: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        default=None,
+        comment="Display name for the user",
+    )
     github_token: Mapped[str | None] = mapped_column(
         String,
         nullable=True,

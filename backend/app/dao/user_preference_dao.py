@@ -40,6 +40,7 @@ class UserPreferenceDAO:
         skills: list[dict],
         project_interests: list[str],
         issue_interests: list[str],
+        user_name: str | None = None,
         github_token: str | None = None,
         github_username: str | None = None,
     ) -> UserPreference:
@@ -55,7 +56,9 @@ class UserPreferenceDAO:
             "updated_at": datetime.utcnow().isoformat(),
         }
 
-        # Only include GitHub fields if provided
+        # Only include optional fields if provided
+        if user_name is not None:
+            data["user_name"] = user_name
         if github_token is not None:
             data["github_token"] = github_token
         if github_username is not None:
@@ -79,6 +82,7 @@ class UserPreferenceDAO:
     def update_partial(
         self,
         user_id: UUID,
+        user_name: str | None = None,
         languages: list[str] | None = None,
         skills: list[dict] | None = None,
         project_interests: list[str] | None = None,
@@ -91,6 +95,8 @@ class UserPreferenceDAO:
             return None
 
         update_data = {"updated_at": datetime.utcnow().isoformat()}
+        if user_name is not None:
+            update_data["user_name"] = user_name
         if languages is not None:
             update_data["languages"] = languages
         if skills is not None:
@@ -172,6 +178,7 @@ class UserPreferenceDAO:
                     if isinstance(data.get("user_id"), str)
                     else data.get("user_id")
                 )
+                self.user_name = data.get("user_name")
                 self.languages = data.get("languages", [])
                 self.skills = data.get("skills", [])
                 self.project_interests = data.get("project_interests", [])

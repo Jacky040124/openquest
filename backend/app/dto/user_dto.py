@@ -68,6 +68,7 @@ class SkillDTO(BaseModel):
 class UserPreferenceCreateDTO(BaseModel):
     """User preference creation request"""
 
+    user_name: str | None = None
     languages: list[str] = []
     skills: list[SkillInputDTO] = []
     project_interests: list[ProjectInterest] = []
@@ -79,6 +80,7 @@ class UserPreferenceCreateDTO(BaseModel):
 class UserPreferenceUpdateDTO(BaseModel):
     """User preference update request"""
 
+    user_name: str | None = None
     languages: list[str] | None = None
     skills: list[SkillInputDTO] | None = None
     project_interests: list[ProjectInterest] | None = None
@@ -92,6 +94,7 @@ class UserPreferenceDTO(BaseModel):
 
     id: UUID
     user_id: UUID
+    user_name: str | None = None
     languages: list[str]
     skills: list[SkillDTO]
     project_interests: list[str]
@@ -108,6 +111,7 @@ class UserPreferenceDTO(BaseModel):
         return cls(
             id=model.id,
             user_id=model.user_id,
+            user_name=model.user_name,
             languages=model.languages or [],
             skills=skills,
             project_interests=model.project_interests or [],

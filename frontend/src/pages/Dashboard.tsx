@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useLogout, useUserPreferences } from '@/hooks/useAuth';
 import { useRecommendations } from '@/hooks/useRepos';
 import { useGitHubStatus, useGitHubAuthorize, useDisconnectGitHub } from '@/hooks/useGitHubOAuth';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -116,6 +116,18 @@ const Dashboard = () => {
       return sortOrder === 'desc' ? -comparison : comparison;
     });
   }, [repos, searchQuery, sortBy, sortOrder]);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoggedIn) {
+      navigate('/login');
+    }
+  }, [isLoggedIn, navigate]);
+
+  // Don't render if not authenticated
+  if (!isLoggedIn) {
+    return null;
+  }
 
 
   const handleLogoClick = () => {
@@ -464,7 +476,7 @@ const Dashboard = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" onClick={handleRefresh}>
               <RefreshCw className="w-4 h-4" />
               Refresh
             </Button>

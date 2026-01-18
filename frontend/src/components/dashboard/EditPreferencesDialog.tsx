@@ -87,6 +87,7 @@ const EditPreferencesDialog = ({ open, onOpenChange }: EditPreferencesDialogProp
     updateSkillFamiliarity,
     toggleIssueInterest,
     toggleProjectInterest,
+    setPreferences,
     getSkillsForApi,
   } = usePreferencesStore();
 
@@ -114,13 +115,24 @@ const EditPreferencesDialog = ({ open, onOpenChange }: EditPreferencesDialogProp
   const [customLanguages, setCustomLanguages] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Reset username when dialog opens
+  // Sync server preferences to local store when dialog opens
   useEffect(() => {
-    if (open) {
-      setEditedUsername(userPrefs?.user_name || '');
+    if (open && userPrefs) {
+      setEditedUsername(userPrefs.user_name || '');
       setUsernameError('');
+
+      // Sync preferences from server to local store
+      setPreferences({
+        languages: userPrefs.languages || [],
+        skills: (userPrefs.skills || []).map((s) => ({
+          name: s.name as SkillName,
+          familiarity: s.familiarity as Familiarity,
+        })),
+        issue_interests: (userPrefs.issue_interests || []) as IssueInterest[],
+        project_interests: (userPrefs.project_interests || []) as ProjectInterest[],
+      });
     }
-  }, [open, userPrefs?.user_name]);
+  }, [open, userPrefs, setPreferences]);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
