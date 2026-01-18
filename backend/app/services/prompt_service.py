@@ -354,7 +354,7 @@ Only include issue IDs that are suitable for the user. If fewer than $limit issu
         issues_list = []
         for issue in issues:
             issue_str = f"- Issue #{issue.get('id', 'unknown')}: {issue.get('title', 'No title')}"
-            labels = issue.get('labels', [])
+            labels = issue.get("labels", [])
             if labels:
                 issue_str += f" [Labels: {', '.join(labels)}]"
             issues_list.append(issue_str)
@@ -363,6 +363,7 @@ Only include issue IDs that are suitable for the user. If fewer than $limit issu
 
         # Substitute template variables
         from string import Template
+
         user_template = Template(self.ISSUE_RANKING_PROMPT_TEMPLATE)
         user_prompt = user_template.substitute(
             repo_name=repo_name,

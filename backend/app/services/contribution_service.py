@@ -5,8 +5,6 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Any
 
-import httpx
-
 from ..config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -29,7 +27,11 @@ class ContributionService:
     def _parse_repo_url(self, repo_url: str) -> tuple[str, str]:
         """Parse GitHub repository URL to extract owner and repo name"""
         # Remove protocol and .git suffix
-        repo_url = repo_url.replace("https://", "").replace("http://", "").replace("github.com/", "")
+        repo_url = (
+            repo_url.replace("https://", "")
+            .replace("http://", "")
+            .replace("github.com/", "")
+        )
         if repo_url.endswith(".git"):
             repo_url = repo_url[:-4]
         if repo_url.endswith("/"):
@@ -45,16 +47,16 @@ class ContributionService:
     ) -> list[dict[str, Any]]:
         """
         Fetch contribution data from GitHub API.
-        
+
         For demo purposes, this mocks data. In production, you would:
         1. Fetch commits via GitHub API
         2. Fetch PRs and their file changes
         3. Aggregate by author and file path
-        
+
         Args:
             repo_url: GitHub repository URL
             days_back: Number of days to look back
-            
+
         Returns:
             List of contribution records with:
             - author: str
@@ -77,14 +79,14 @@ class ContributionService:
     ) -> list[dict[str, Any]]:
         """
         Generate mock contribution data for demo purposes.
-        
+
         In production, replace this with actual GitHub API calls:
         - GET /repos/{owner}/{repo}/commits
         - GET /repos/{owner}/{repo}/pulls
         - GET /repos/{owner}/{repo}/stats/contributors
         """
         import random
-        from datetime import datetime, timedelta
+        from datetime import datetime
 
         # Mock contributors
         contributors = [
@@ -130,14 +132,16 @@ class ContributionService:
                 # Generate file path within module
                 file_path = f"{module}/{'subdir' if random.random() > 0.5 else ''}/file_{random.randint(1, 20)}.py"
 
-                contributions.append({
-                    "author": author,
-                    "file_path": file_path,
-                    "lines_added": random.randint(5, 200),
-                    "lines_deleted": random.randint(0, 50),
-                    "commit_count": 1,
-                    "last_modified_timestamp": date,
-                })
+                contributions.append(
+                    {
+                        "author": author,
+                        "file_path": file_path,
+                        "lines_added": random.randint(5, 200),
+                        "lines_deleted": random.randint(0, 50),
+                        "commit_count": 1,
+                        "last_modified_timestamp": date,
+                    }
+                )
 
         return contributions
 
@@ -146,7 +150,7 @@ class ContributionService:
     ) -> dict[str, Any]:
         """
         Generate heatmap matrix data from contribution records.
-        
+
         Returns:
             Dictionary with:
             - matrix: 2D array [contributors][modules] with effort scores
@@ -177,8 +181,8 @@ class ContributionService:
         for module_data in module_contributions.values():
             all_contributors.update(module_data.keys())
 
-        contributors = sorted(list(all_contributors))
-        modules = sorted(list(all_modules))
+        contributors = sorted(all_contributors)
+        modules = sorted(all_modules)
 
         # Build heatmap matrix with weighted effort scores
         # Score = commit_count × log(lines_changed + 1)
@@ -199,11 +203,13 @@ class ContributionService:
                 # Using log to prevent large files from dominating
                 effort_score = commits * math.log(lines + 1) if lines > 0 else 0
                 row.append(effort_score)
-                row_scores.append({
-                    "commits": commits,
-                    "lines_changed": lines,
-                    "effort_score": effort_score,
-                })
+                row_scores.append(
+                    {
+                        "commits": commits,
+                        "lines_changed": lines,
+                        "effort_score": effort_score,
+                    }
+                )
 
             matrix.append(row)
             effort_scores.append(row_scores)
@@ -223,12 +229,12 @@ class ContributionService:
     ) -> list[dict[str, Any]]:
         """
         Identify modules with low activity over time window.
-        
+
         Args:
             contributions: List of contribution records
             days_back: Time window to analyze
             threshold_days: Module is neglected if no activity in last N days
-            
+
         Returns:
             List of neglected modules with:
             - module: Module name
@@ -236,7 +242,6 @@ class ContributionService:
             - total_contributions: Total contributions in time window
         """
         from collections import defaultdict
-        from datetime import datetime
 
         module_last_activity: dict[str, datetime] = {}
         module_contribution_count: dict[str, int] = defaultdict(int)
@@ -263,11 +268,13 @@ class ContributionService:
         for module, last_activity in module_last_activity.items():
             days_since = (now - last_activity).days
             if days_since > threshold_days:
-                neglected.append({
-                    "module": module,
-                    "days_since_last_activity": days_since,
-                    "total_contributions": module_contribution_count[module],
-                })
+                neglected.append(
+                    {
+                        "module": module,
+                        "days_since_last_activity": days_since,
+                        "total_contributions": module_contribution_count[module],
+                    }
+                )
 
         # Sort by days since last activity (most neglected first)
         neglected.sort(key=lambda x: x["days_since_last_activity"], reverse=True)
@@ -279,11 +286,11 @@ class ContributionService:
     ) -> dict[str, list[dict[str, Any]]]:
         """
         Identify each contributor's specialization (top modules by relative effort).
-        
+
         Args:
             contributions: List of contribution records
             top_n: Number of top modules to return per contributor
-            
+
         Returns:
             Dictionary mapping contributor -> list of specializations with:
             - module: Module name
@@ -291,11 +298,11 @@ class ContributionService:
             - commits: Number of commits
             - lines_changed: Total lines changed
         """
-        from collections import defaultdict
         import math
+        from collections import defaultdict
 
-        contributor_module_effort: dict[str, dict[str, dict[str, int]]] = (
-            defaultdict(lambda: defaultdict(lambda: {"commits": 0, "lines": 0}))
+        contributor_module_effort: dict[str, dict[str, dict[str, int]]] = defaultdict(
+            lambda: defaultdict(lambda: {"commits": 0, "lines": 0})
         )
 
         # Aggregate contributions by contributor and module
@@ -329,14 +336,18 @@ class ContributionService:
             for module, data in modules.items():
                 if data["lines"] > 0:
                     effort = data["commits"] * math.log(data["lines"] + 1)
-                    effort_share = (effort / total_effort) * 100 if total_effort > 0 else 0
+                    effort_share = (
+                        (effort / total_effort) * 100 if total_effort > 0 else 0
+                    )
 
-                    module_efforts.append({
-                        "module": module,
-                        "effort_share": round(effort_share, 2),
-                        "commits": data["commits"],
-                        "lines_changed": data["lines"],
-                    })
+                    module_efforts.append(
+                        {
+                            "module": module,
+                            "effort_share": round(effort_share, 2),
+                            "commits": data["commits"],
+                            "lines_changed": data["lines"],
+                        }
+                    )
 
             # Sort by effort share and take top N
             module_efforts.sort(key=lambda x: x["effort_share"], reverse=True)
@@ -349,7 +360,7 @@ class ContributionService:
     ) -> dict[str, Any]:
         """
         Complete repository contribution analysis.
-        
+
         Returns:
             Dictionary with:
             - heatmap: Heatmap matrix data
@@ -379,4 +390,3 @@ class ContributionService:
                 "analysis_period_days": days_back,
             },
         }
-

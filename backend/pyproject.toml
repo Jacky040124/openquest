@@ -18,6 +18,9 @@ dependencies = [
     "alembic>=1.13.0",
     "supabase>=2.5.0",
     "python-dotenv>=1.0.0",
+    # Agent dependencies
+    "e2b-code-interpreter>=1.0.0",
+    "sse-starlette>=2.0.0",
 ]
 
 [project.optional-dependencies]
