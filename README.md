@@ -11,7 +11,7 @@ It's like LeetCode, but for real repositories and real pull requests.
    Users describe their experience, tech stack, and interests.
 
 2. **Repo Matching**:
-   An AI agent recommends beginner-friendly open-source GitHub repositories.
+   An AI agent recommends open-source GitHub repositories that users can contribute to, based on their skill level and experience in various technologies.
 
 3. **Issue Ranking**:
    Selected repos are analyzed and issues are ranked by:
