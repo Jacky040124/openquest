@@ -4,20 +4,19 @@ import { usePreferencesStore } from '@/store/preferencesStore';
 import { useAuthStore } from '@/store/authStore';
 import StepIndicator from '@/components/StepIndicator';
 import WelcomeStep from '@/components/steps/WelcomeStep';
-import ExperienceStep from '@/components/steps/ExperienceStep';
 import LanguagesStep from '@/components/steps/LanguagesStep';
-import FrameworksStep from '@/components/steps/FrameworksStep';
+import SkillsStep from '@/components/steps/SkillsStep';
 import IssueTypesStep from '@/components/steps/IssueTypesStep';
 import ProjectTypesStep from '@/components/steps/ProjectTypesStep';
 import SummaryStep from '@/components/steps/SummaryStep';
 import CreateAccountStep from '@/components/steps/CreateAccountStep';
 import logo from "@/assets/logo.png";
 
+// Steps: Welcome(0), Languages(1), Skills(2), IssueTypes(3), ProjectTypes(4), Summary(5), CreateAccount(6)
 const steps = [
   WelcomeStep,
-  ExperienceStep,
   LanguagesStep,
-  FrameworksStep,
+  SkillsStep,
   IssueTypesStep,
   ProjectTypesStep,
   SummaryStep,
@@ -42,11 +41,11 @@ const Index = () => {
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
       {/* Background gradient effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div 
+        <div
           className="absolute -top-1/2 -left-1/2 w-full h-full opacity-50"
           style={{ background: 'radial-gradient(circle, hsl(175 80% 50% / 0.08) 0%, transparent 70%)' }}
         />
-        <div 
+        <div
           className="absolute -bottom-1/2 -right-1/2 w-full h-full opacity-50"
           style={{ background: 'radial-gradient(circle, hsl(280 70% 60% / 0.08) 0%, transparent 70%)' }}
         />
@@ -66,14 +65,14 @@ const Index = () => {
       </header>
 
       {/* Step Indicator - hide on welcome and account creation steps */}
-      {currentStep > 0 && currentStep < 7 && (
+      {currentStep > 0 && currentStep < 6 && (
         <motion.div
           className="relative z-10 py-4 flex-shrink-0"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <StepIndicator totalSteps={7} currentStep={currentStep} />
+          <StepIndicator totalSteps={6} currentStep={currentStep} />
         </motion.div>
       )}
 
@@ -96,7 +95,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="relative z-10 p-6 text-center flex-shrink-0">
         <p className="text-muted-foreground text-sm">
-          Built with ❤️ for the open source community
+          Built with love for the open source community
         </p>
       </footer>
     </div>

@@ -2,19 +2,57 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { useAuthStore } from '@/store/authStore';
-import { CheckCircle, RotateCcw, Search, Code, Layers, Bug, Folder } from 'lucide-react';
+import { CheckCircle, RotateCcw, Search, Layers, Bug, Folder, Wrench } from 'lucide-react';
+
+// Display labels for issue interests
+const issueInterestLabels: Record<string, string> = {
+  bug_fix: 'Bug Fixes',
+  feature: 'New Features',
+  enhancement: 'Enhancements',
+  optimization: 'Optimization',
+  refactor: 'Refactoring',
+  testing: 'Testing',
+  documentation: 'Documentation',
+  accessibility: 'Accessibility',
+  security: 'Security',
+  ui_ux: 'UI/UX',
+  dependency: 'Dependencies',
+  ci_cd: 'CI/CD',
+  cleanup: 'Cleanup',
+};
+
+// Display labels for project interests
+const projectInterestLabels: Record<string, string> = {
+  webapp: 'Web Applications',
+  mobile: 'Mobile Apps',
+  desktop: 'Desktop Apps',
+  cli: 'CLI Tools',
+  api: 'APIs & Backend',
+  library: 'Libraries',
+  llm: 'LLM & AI',
+  ml: 'Machine Learning',
+  data: 'Data & Analytics',
+  devtools: 'Developer Tools',
+  game: 'Game Development',
+  blockchain: 'Blockchain',
+  iot: 'IoT & Embedded',
+  security: 'Security',
+  automation: 'Automation',
+  infrastructure: 'Infrastructure',
+};
+
+// Display labels for familiarity
+const familiarityLabels: Record<string, string> = {
+  beginner: 'Beginner',
+  intermediate: 'Intermediate',
+  advanced: 'Advanced',
+  expert: 'Expert',
+};
 
 const SummaryStep = () => {
   const navigate = useNavigate();
   const { preferences, resetPreferences, prevStep, nextStep } = usePreferencesStore();
   const { isLoggedIn } = useAuthStore();
-
-  const experienceLabels: Record<string, string> = {
-    beginner: 'Beginner',
-    intermediate: 'Intermediate',
-    advanced: 'Advanced',
-    expert: 'Expert',
-  };
 
   return (
     <motion.div
@@ -51,23 +89,6 @@ const SummaryStep = () => {
           },
         }}
       >
-        {/* Experience Level */}
-        <motion.div
-          className="card-interactive p-5"
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 },
-          }}
-        >
-          <div className="flex items-center gap-3 mb-3">
-            <Code className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold">Experience Level</h3>
-          </div>
-          <div className="bg-primary/10 text-primary px-3 py-1.5 rounded-md inline-block font-medium">
-            {experienceLabels[preferences.experienceLevel || ''] || 'Not selected'}
-          </div>
-        </motion.div>
-
         {/* Languages */}
         <motion.div
           className="card-interactive p-5"
@@ -81,18 +102,22 @@ const SummaryStep = () => {
             <h3 className="font-semibold">Languages ({preferences.languages.length})</h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            {preferences.languages.map((lang) => (
-              <span
-                key={lang}
-                className="bg-secondary px-3 py-1 rounded-md text-sm capitalize"
-              >
-                {lang}
-              </span>
-            ))}
+            {preferences.languages.length > 0 ? (
+              preferences.languages.map((lang) => (
+                <span
+                  key={lang}
+                  className="bg-secondary px-3 py-1 rounded-md text-sm"
+                >
+                  {lang}
+                </span>
+              ))
+            ) : (
+              <span className="text-muted-foreground text-sm">No languages selected</span>
+            )}
           </div>
         </motion.div>
 
-        {/* Frameworks */}
+        {/* Skills */}
         <motion.div
           className="card-interactive p-5"
           variants={{
@@ -101,22 +126,29 @@ const SummaryStep = () => {
           }}
         >
           <div className="flex items-center gap-3 mb-3">
-            <Layers className="w-5 h-5 text-accent" />
-            <h3 className="font-semibold">Frameworks ({preferences.frameworks.length})</h3>
+            <Wrench className="w-5 h-5 text-accent" />
+            <h3 className="font-semibold">Skills ({preferences.skills.length})</h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            {preferences.frameworks.map((framework) => (
-              <span
-                key={framework}
-                className="bg-secondary px-3 py-1 rounded-md text-sm capitalize"
-              >
-                {framework}
-              </span>
-            ))}
+            {preferences.skills.length > 0 ? (
+              preferences.skills.map((skill) => (
+                <span
+                  key={skill.name}
+                  className="bg-secondary px-3 py-1 rounded-md text-sm flex items-center gap-2"
+                >
+                  <span className="capitalize">{skill.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    ({familiarityLabels[skill.familiarity] || skill.familiarity})
+                  </span>
+                </span>
+              ))
+            ) : (
+              <span className="text-muted-foreground text-sm">No skills selected</span>
+            )}
           </div>
         </motion.div>
 
-        {/* Issue Types */}
+        {/* Issue Interests */}
         <motion.div
           className="card-interactive p-5"
           variants={{
@@ -126,21 +158,25 @@ const SummaryStep = () => {
         >
           <div className="flex items-center gap-3 mb-3">
             <Bug className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold">Issue Types ({preferences.issueTypes.length})</h3>
+            <h3 className="font-semibold">Issue Types ({preferences.issue_interests.length})</h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            {preferences.issueTypes.map((type) => (
-              <span
-                key={type}
-                className="bg-secondary px-3 py-1 rounded-md text-sm capitalize"
-              >
-                {type === 'bug' ? 'Bug Fixes' : type}
-              </span>
-            ))}
+            {preferences.issue_interests.length > 0 ? (
+              preferences.issue_interests.map((interest) => (
+                <span
+                  key={interest}
+                  className="bg-secondary px-3 py-1 rounded-md text-sm"
+                >
+                  {issueInterestLabels[interest] || interest}
+                </span>
+              ))
+            ) : (
+              <span className="text-muted-foreground text-sm">No issue types selected</span>
+            )}
           </div>
         </motion.div>
 
-        {/* Project Types */}
+        {/* Project Interests */}
         <motion.div
           className="card-interactive p-5"
           variants={{
@@ -150,17 +186,21 @@ const SummaryStep = () => {
         >
           <div className="flex items-center gap-3 mb-3">
             <Folder className="w-5 h-5 text-accent" />
-            <h3 className="font-semibold">Project Types ({preferences.projectTypes.length})</h3>
+            <h3 className="font-semibold">Project Types ({preferences.project_interests.length})</h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            {preferences.projectTypes.map((type) => (
-              <span
-                key={type}
-                className="bg-secondary px-3 py-1 rounded-md text-sm capitalize"
-              >
-                {type.replace('-', ' / ')}
-              </span>
-            ))}
+            {preferences.project_interests.length > 0 ? (
+              preferences.project_interests.map((interest) => (
+                <span
+                  key={interest}
+                  className="bg-secondary px-3 py-1 rounded-md text-sm"
+                >
+                  {projectInterestLabels[interest] || interest}
+                </span>
+              ))
+            ) : (
+              <span className="text-muted-foreground text-sm">No project types selected</span>
+            )}
           </div>
         </motion.div>
       </motion.div>
@@ -182,7 +222,7 @@ const SummaryStep = () => {
             <RotateCcw className="w-4 h-4" />
             Start Over
           </button>
-          <button 
+          <button
             onClick={() => {
               if (isLoggedIn) {
                 navigate('/dashboard');
