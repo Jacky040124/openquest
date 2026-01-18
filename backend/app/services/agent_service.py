@@ -665,7 +665,7 @@ Include what you've learned and what areas still need investigation.""",
                 tool_results = []
                 for i, tc in enumerate(tool_calls):
                     logger.info(
-                        f"[AGENT] Executing tool {i+1}/{len(tool_calls)}: {tc['name']}"
+                        f"[AGENT] Executing tool {i + 1}/{len(tool_calls)}: {tc['name']}"
                     )
                     yield AgentToolEvent(
                         tool_name=tc["name"],

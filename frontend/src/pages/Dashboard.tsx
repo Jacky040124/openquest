@@ -466,7 +466,7 @@ const Dashboard = () => {
             </DropdownMenu>
             <Button variant="outline" className="gap-2">
               <RefreshCw className="w-4 h-4" />
-              Refresh 
+              Refresh
             </Button>
           </motion.div>
 
