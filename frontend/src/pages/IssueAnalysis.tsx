@@ -454,10 +454,13 @@ const IssueAnalysis = () => {
   const copyCommands = useCallback(() => {
     if (!implementResult || !githubUsername || !repo) return;
 
-    const commands = `git clone https://github.com/${githubUsername}/${repo}.git
+    const commands = `# Clone and work locally:
+git clone --depth 1 https://github.com/${githubUsername}/${repo}.git
 cd ${repo}
 git checkout ${implementResult.branch}
-cat ANALYSIS.md`;
+
+# To revert the implementation:
+git revert HEAD --no-edit`;
 
     navigator.clipboard.writeText(commands);
     toast({
@@ -465,6 +468,7 @@ cat ANALYSIS.md`;
       description: 'Commands copied to clipboard',
     });
   }, [implementResult, githubUsername, repo, toast]);
+
 
   // Loading state
   if (isLoadingStatus) {
@@ -822,12 +826,13 @@ cat ANALYSIS.md`;
 
             <TerminalWindow title="next-steps">
               <div className="space-y-4 text-xs">
-                <div className="text-neutral-500"># Clone and work locally:</div>
                 <div className="bg-neutral-950 p-3 border border-neutral-800 space-y-1">
-                  <div><span className="text-neutral-500">$</span> git clone https://github.com/{githubUsername}/{repo}.git</div>
+                  <div className="text-neutral-600"># Clone and work locally:</div>
+                  <div><span className="text-neutral-500">$</span> git clone --depth 1 https://github.com/{githubUsername}/{repo}.git</div>
                   <div><span className="text-neutral-500">$</span> cd {repo}</div>
                   <div><span className="text-neutral-500">$</span> git checkout {implementResult.branch}</div>
-                  <div><span className="text-neutral-500">$</span> cat ANALYSIS.md</div>
+                  <div className="text-neutral-600 pt-2"># To revert the implementation:</div>
+                  <div><span className="text-neutral-500">$</span> git revert HEAD --no-edit</div>
                 </div>
 
                 <div className="flex gap-4 pt-2">
