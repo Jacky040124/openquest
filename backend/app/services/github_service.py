@@ -64,7 +64,7 @@ class GitHubService:
                 repo_response.raise_for_status()
                 repo_data = repo_response.json()
                 repo_language = repo_data.get("language")
-                
+
                 # Fetch issues
                 response = await client.get(
                     f"{self.BASE_URL}/repos/{owner}/{repo}/issues",
@@ -77,7 +77,9 @@ class GitHubService:
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 404:
                     raise ValueError(f"Repository not found: {owner}/{repo}")
-                raise ValueError(f"GitHub API error: {e.response.status_code} - {e.response.text}")
+                raise ValueError(
+                    f"GitHub API error: {e.response.status_code} - {e.response.text}"
+                )
             except Exception as e:
                 raise ValueError(f"Failed to fetch issues: {str(e)}")
 

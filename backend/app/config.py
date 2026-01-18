@@ -29,12 +29,25 @@ class Settings(BaseSettings):
     # GitHub
     github_token: str | None = None
 
+    # GitHub OAuth
+    github_client_id: str | None = None
+    github_client_secret: str | None = None
+    github_redirect_uri: str = "http://localhost:5173/auth/github/callback"
+
     # Redis (optional)
     redis_url: str | None = None
 
     # OpenRouter LLM
     openrouter_api_key: str | None = None
-    openrouter_model: str = "anthropic/claude-3.5-haiku"
+    openrouter_model: str = "anthropic/claude-sonnet-4.5"
+
+    # E2B Sandbox
+    e2b_api_key: str | None = None
+    e2b_sandbox_timeout: int = 600  # 10 minutes
+
+    # Agent Configuration
+    agent_max_turns: int = 10
+    agent_max_tokens_per_tool: int = 8000
 
     @property
     def is_production(self) -> bool:

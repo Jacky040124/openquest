@@ -15,13 +15,15 @@ class IssueService:
         # GitHub API uses AND logic for multiple labels (all labels must match)
         # For OR logic (any label matches), we fetch without labels and filter client-side
         use_client_side_label_filter = len(filter_dto.tags) > 1
-        
+
         if use_client_side_label_filter:
             # Fetch all open issues, then filter by tags (OR logic)
             issues = await self.github_service.get_issues(
                 repo_url=str(filter_dto.repo_url),
                 labels=None,  # Don't filter by labels in API
-                per_page=min(filter_dto.limit * 3, 100),  # Get more to account for filtering
+                per_page=min(
+                    filter_dto.limit * 3, 100
+                ),  # Get more to account for filtering
             )
         else:
             # Single label or no labels - use API filtering
@@ -40,7 +42,7 @@ class IssueService:
                 tags_lower = [tag.lower() for tag in filter_dto.tags]
                 if not any(tag in issue_labels_lower for tag in tags_lower):
                     continue
-            
+
             # Exclude assigned issues if requested
             if filter_dto.exclude_assigned and issue.is_assigned:
                 continue

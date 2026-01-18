@@ -6,7 +6,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
+from .controllers.agent_controller import router as agent_router
 from .controllers.auth_controller import router as auth_router
+from .controllers.github_oauth_controller import router as oauth_router
 from .controllers.issue_controller import router as issue_router
 from .controllers.repo_controller import router as repo_router
 
@@ -50,6 +52,8 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(issue_router, prefix="/api/v1")
     app.include_router(repo_router, prefix="/api/v1")
+    app.include_router(agent_router, prefix="/api/v1")
+    app.include_router(oauth_router, prefix="/api/v1")
 
     @app.get("/", tags=["Health"])
     async def root():

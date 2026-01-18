@@ -25,10 +25,10 @@ class UserPreferenceDAO:
                 .maybe_single()
                 .execute()
             )
-            
+
             if not response.data:
                 return None
-            
+
             return self._dict_to_model(response.data)
         except Exception:
             return None
@@ -65,11 +65,7 @@ class UserPreferenceDAO:
         else:
             # Create new
             data["created_at"] = datetime.utcnow().isoformat()
-            response = (
-                self.supabase.table(self.table)
-                .insert(data)
-                .execute()
-            )
+            response = self.supabase.table(self.table).insert(data).execute()
             return self._dict_to_model(response.data[0] if response.data else data)
 
     def update_partial(
@@ -103,7 +99,11 @@ class UserPreferenceDAO:
                 .eq("user_id", str(user_id))
                 .execute()
             )
-            return self._dict_to_model(response.data[0] if response.data else {**existing.__dict__, **update_data})
+            return self._dict_to_model(
+                response.data[0]
+                if response.data
+                else {**existing.__dict__, **update_data}
+            )
         return existing
 
     def delete_by_user_id(self, user_id: UUID) -> bool:
@@ -121,11 +121,20 @@ class UserPreferenceDAO:
 
     def _dict_to_model(self, data: dict) -> UserPreference:
         """Convert dictionary to UserPreference model"""
+
         # Create a simple object that mimics the SQLAlchemy model
         class PreferenceObj:
             def __init__(self, data: dict):
-                self.id = UUID(data["id"]) if isinstance(data.get("id"), str) else data.get("id")
-                self.user_id = UUID(data["user_id"]) if isinstance(data.get("user_id"), str) else data.get("user_id")
+                self.id = (
+                    UUID(data["id"])
+                    if isinstance(data.get("id"), str)
+                    else data.get("id")
+                )
+                self.user_id = (
+                    UUID(data["user_id"])
+                    if isinstance(data.get("user_id"), str)
+                    else data.get("user_id")
+                )
                 self.languages = data.get("languages", [])
                 self.skills = data.get("skills", [])
                 self.project_interests = data.get("project_interests", [])
