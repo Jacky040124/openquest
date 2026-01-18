@@ -455,12 +455,12 @@ const IssueAnalysis = () => {
     if (!implementResult || !githubUsername || !repo) return;
 
     const commands = `# Clone and work locally:
-git clone --depth 1 https://github.com/${githubUsername}/${repo}.git
+git clone https://github.com/${githubUsername}/${repo}.git
 cd ${repo}
 git checkout ${implementResult.branch}
 
-# To revert the implementation:
-git revert HEAD --no-edit`;
+# To undo the last commit (keeps changes):
+git reset HEAD~1`;
 
     navigator.clipboard.writeText(commands);
     toast({
@@ -828,11 +828,11 @@ git revert HEAD --no-edit`;
               <div className="space-y-4 text-xs">
                 <div className="bg-neutral-950 p-3 border border-neutral-800 space-y-1">
                   <div className="text-neutral-600"># Clone and work locally:</div>
-                  <div><span className="text-neutral-500">$</span> git clone --depth 1 https://github.com/{githubUsername}/{repo}.git</div>
+                  <div><span className="text-neutral-500">$</span> git clone https://github.com/{githubUsername}/{repo}.git</div>
                   <div><span className="text-neutral-500">$</span> cd {repo}</div>
                   <div><span className="text-neutral-500">$</span> git checkout {implementResult.branch}</div>
-                  <div className="text-neutral-600 pt-2"># To revert the implementation:</div>
-                  <div><span className="text-neutral-500">$</span> git revert HEAD --no-edit</div>
+                  <div className="text-neutral-600 pt-2"># To undo the last commit (keeps changes):</div>
+                  <div><span className="text-neutral-500">$</span> git reset HEAD~1</div>
                 </div>
 
                 <div className="flex gap-4 pt-2">
