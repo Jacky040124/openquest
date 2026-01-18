@@ -18,7 +18,7 @@ class AuthService:
     def register(self, data: RegisterDTO) -> UserResponseDTO:
         """
         Register a new user.
-        
+
         Note: If email confirmation is enabled in Supabase, the user will need to
         confirm their email before they can log in. The registration will still
         succeed and return the user object.
@@ -27,7 +27,7 @@ class AuthService:
             # Validate password length (Supabase minimum is typically 6 characters)
             if len(data.password) < 6:
                 raise ValueError("Password must be at least 6 characters long")
-            
+
             response = self.supabase.auth.sign_up(
                 {
                     "email": data.email,
@@ -64,9 +64,12 @@ class AuthService:
             # Catch Supabase-specific exceptions
             error_msg = str(e)
             logger.error(f"Registration error: {error_msg}")
-            
+
             # Handle common Supabase errors
-            if "already registered" in error_msg.lower() or "already exists" in error_msg.lower():
+            if (
+                "already registered" in error_msg.lower()
+                or "already exists" in error_msg.lower()
+            ):
                 raise ValueError("Email already registered")
             elif "password" in error_msg.lower():
                 raise ValueError(f"Password validation failed: {error_msg}")

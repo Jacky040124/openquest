@@ -20,7 +20,7 @@ class IssueFilterDTO(BaseModel):
         """Validate and normalize repository URL"""
         if not v:
             raise ValueError("repo_url is required")
-        
+
         # Ensure URL has protocol
         v = v.strip()
         if not v.startswith(("http://", "https://")):
@@ -29,7 +29,7 @@ class IssueFilterDTO(BaseModel):
                 v = f"https://{v}" if not v.startswith("//") else f"https:{v}"
             else:
                 v = f"https://{v}"
-        
+
         return v
 
 

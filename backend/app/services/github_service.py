@@ -29,18 +29,18 @@ class GitHubService:
         """Parse owner and repo from GitHub URL"""
         # Clean up the URL
         repo_url = str(repo_url).strip()
-        
+
         # Remove trailing slash
         if repo_url.endswith("/"):
             repo_url = repo_url[:-1]
-        
+
         # Remove .git suffix if present
         if repo_url.endswith(".git"):
             repo_url = repo_url[:-4]
-        
+
         parsed = urlparse(repo_url)
         path_parts = parsed.path.strip("/").split("/")
-        
+
         if len(path_parts) >= 2:
             owner = path_parts[0]
             repo = path_parts[1]
@@ -48,8 +48,10 @@ class GitHubService:
             if repo.endswith(".git"):
                 repo = repo[:-4]
             return owner, repo
-        
-        raise ValueError(f"Invalid GitHub repository URL: {repo_url}. Expected format: https://github.com/owner/repo")
+
+        raise ValueError(
+            f"Invalid GitHub repository URL: {repo_url}. Expected format: https://github.com/owner/repo"
+        )
 
     async def get_issues(
         self,
@@ -84,7 +86,7 @@ class GitHubService:
                 repo_response.raise_for_status()
                 repo_data = repo_response.json()
                 repo_language = repo_data.get("language")
-                
+
                 # Fetch issues
                 response = await client.get(
                     f"{self.BASE_URL}/repos/{owner}/{repo}/issues",
@@ -97,7 +99,9 @@ class GitHubService:
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 404:
                     raise ValueError(f"Repository not found: {owner}/{repo}")
-                raise ValueError(f"GitHub API error: {e.response.status_code} - {e.response.text}")
+                raise ValueError(
+                    f"GitHub API error: {e.response.status_code} - {e.response.text}"
+                )
             except Exception as e:
                 raise ValueError(f"Failed to fetch issues: {str(e)}")
 
@@ -162,20 +166,25 @@ class GitHubService:
             unassigned_count = 0
             page = 1
             per_page = 100
-            
+
             while True:
                 response = await client.get(
                     f"{self.BASE_URL}/repos/{owner}/{repo}/issues",
                     headers=self.headers,
-                    params={"labels": label, "state": "open", "per_page": per_page, "page": page},
+                    params={
+                        "labels": label,
+                        "state": "open",
+                        "per_page": per_page,
+                        "page": page,
+                    },
                 )
                 response.raise_for_status()
                 data = response.json()
-                
+
                 # If no more issues, break
                 if not data:
                     break
-                
+
                 # Filter out pull requests and assigned issues
                 for item in data:
                     # Skip pull requests
@@ -184,17 +193,17 @@ class GitHubService:
                     # Count only unassigned issues
                     if item.get("assignee") is None:
                         unassigned_count += 1
-                
+
                 # Check if there are more pages
                 link_header = response.headers.get("Link", "")
-                if "rel=\"next\"" not in link_header:
+                if 'rel="next"' not in link_header:
                     break
-                
+
                 page += 1
                 # Limit to first 10 pages (1000 issues max) for performance
                 if page > 10:
                     break
-            
+
             return unassigned_count
 
     async def search_repos(

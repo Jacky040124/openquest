@@ -22,16 +22,16 @@ async def analyze_contributions(
 ) -> ContributionAnalysisDTO:
     """
     Analyze repository contributions and generate heatmap data.
-    
+
     This endpoint provides repository observability insights:
     - **Heatmap**: Shows where developer effort is concentrated
     - **Neglected Modules**: Identifies modules with low activity
     - **Specializations**: Shows which contributors focus on which areas
-    
+
     **Request body:**
     - **repo_url**: GitHub repository URL (required)
     - **days_back**: Number of days to analyze (default: 90, max: 365)
-    
+
     **Response includes:**
     - Heatmap matrix (contributors × modules) with effort scores
     - List of neglected modules (no activity in last 30 days)
@@ -56,4 +56,3 @@ async def analyze_contributions(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Failed to analyze repository contributions: {str(e)}",
         )
-

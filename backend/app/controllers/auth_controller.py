@@ -26,11 +26,11 @@ security = HTTPBearer()
 async def register(data: RegisterDTO, supabase: SupabaseClient) -> UserResponseDTO:
     """
     Register a new user.
-    
+
     **Request body:**
     - **email**: Valid email address (required)
     - **password**: Password string (required, minimum 6 characters)
-    
+
     **Note:** If email confirmation is enabled in Supabase, the user will need to
     confirm their email before they can log in.
     """

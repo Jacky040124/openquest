@@ -42,13 +42,15 @@ class IssueService:
         # GitHub API uses AND logic for multiple labels (all labels must match)
         # For OR logic (any label matches), we fetch without labels and filter client-side
         use_client_side_label_filter = len(filter_dto.tags) > 1
-        
+
         if use_client_side_label_filter:
             # Fetch all open issues, then filter by tags (OR logic)
             issues = await self.github_service.get_issues(
                 repo_url=str(filter_dto.repo_url),
                 labels=None,  # Don't filter by labels in API
-                per_page=min(filter_dto.limit * 3, 100),  # Get more to account for filtering
+                per_page=min(
+                    filter_dto.limit * 3, 100
+                ),  # Get more to account for filtering
             )
         else:
             # Single label or no labels - use API filtering
@@ -60,9 +62,12 @@ class IssueService:
                 labels=filter_dto.tags if filter_dto.tags else None,
                 per_page=100,  # Fetch more per page
             )
-            
+
             # If we need more issues and exclude_assigned is True, fetch additional pages
-            if filter_dto.exclude_assigned and len([i for i in issues if not i.is_assigned]) < filter_dto.limit:
+            if (
+                filter_dto.exclude_assigned
+                and len([i for i in issues if not i.is_assigned]) < filter_dto.limit
+            ):
                 # Fetch more pages to find unassigned issues
                 page = 2
                 max_pages = 5  # Limit to 5 pages (500 issues) for performance
@@ -91,7 +96,7 @@ class IssueService:
                 tags_lower = [tag.lower() for tag in filter_dto.tags]
                 if not any(tag in issue_labels_lower for tag in tags_lower):
                     continue
-            
+
             # Exclude assigned issues if requested
             if filter_dto.exclude_assigned and issue.is_assigned:
                 continue
@@ -115,12 +120,10 @@ class IssueService:
                 if ranked_issues:
                     return ranked_issues
             except Exception as e:
-                logger.warning(
-                    f"AI issue ranking failed, using default order: {e}"
-                )
+                logger.warning(f"AI issue ranking failed, using default order: {e}")
 
         # Return filtered issues (limited to requested amount)
-        return filtered_issues[:filter_dto.limit]
+        return filtered_issues[: filter_dto.limit]
 
     async def _rank_issues_with_ai(
         self,
@@ -149,14 +152,16 @@ class IssueService:
         # Convert issues to dict format for prompt
         issues_data = []
         for issue in issues:
-            issues_data.append({
-                "id": issue.id,
-                "title": issue.title,
-                "labels": issue.labels,
-                "language": issue.language,
-                "comments_count": issue.comments_count,
-                "is_assigned": issue.is_assigned,
-            })
+            issues_data.append(
+                {
+                    "id": issue.id,
+                    "title": issue.title,
+                    "labels": issue.labels,
+                    "language": issue.language,
+                    "comments_count": issue.comments_count,
+                    "is_assigned": issue.is_assigned,
+                }
+            )
 
         # Build prompts
         system_prompt, user_prompt = self.prompt_service.build_issue_ranking_prompt(

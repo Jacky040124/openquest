@@ -1,6 +1,6 @@
 """Contribution Analysis DTOs"""
 
-from pydantic import BaseModel, HttpUrl, field_validator
+from pydantic import BaseModel, field_validator
 
 
 class ContributionAnalysisQueryDTO(BaseModel):
@@ -69,4 +69,3 @@ class ContributionAnalysisDTO(BaseModel):
     neglected_modules: list[NeglectedModuleDTO]
     specializations: dict[str, list[ContributorSpecializationDTO]]
     summary: dict[str, int | str]
-

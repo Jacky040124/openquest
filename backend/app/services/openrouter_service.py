@@ -141,3 +141,77 @@ class OpenRouterService:
             data = response.json()
 
         return data["choices"][0]["message"]["content"]
+
+    async def generate_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        temperature: float = 0.7,
+        max_tokens: int = 4096,
+    ) -> dict[str, Any]:
+        """
+        Generate a response with tool/function calling support.
+
+        Args:
+            messages: List of message dicts with role and content
+            tools: List of tool definitions in OpenAI function calling format
+            temperature: Sampling temperature (0-2)
+            max_tokens: Maximum tokens in response
+
+        Returns:
+            Full API response dict containing:
+            - choices[0].message.content: Text response (if any)
+            - choices[0].message.tool_calls: List of tool calls (if any)
+            - choices[0].finish_reason: 'stop', 'tool_calls', or 'length'
+        """
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "tools": tools,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            response = await client.post(
+                self.BASE_URL,
+                headers=self.headers,
+                json=payload,
+            )
+            response.raise_for_status()
+            return response.json()
+
+    def parse_tool_calls(self, response: dict[str, Any]) -> list[dict[str, Any]]:
+        """
+        Parse tool calls from API response.
+
+        Args:
+            response: API response from generate_with_tools
+
+        Returns:
+            List of tool call dicts with id, name, and arguments
+        """
+        tool_calls = []
+        message = response.get("choices", [{}])[0].get("message", {})
+
+        if "tool_calls" in message:
+            for tc in message["tool_calls"]:
+                tool_calls.append(
+                    {
+                        "id": tc.get("id"),
+                        "name": tc.get("function", {}).get("name"),
+                        "arguments": json.loads(
+                            tc.get("function", {}).get("arguments", "{}")
+                        ),
+                    }
+                )
+
+        return tool_calls
+
+    def get_finish_reason(self, response: dict[str, Any]) -> str:
+        """Get the finish reason from API response"""
+        return response.get("choices", [{}])[0].get("finish_reason", "unknown")
+
+    def get_text_content(self, response: dict[str, Any]) -> str | None:
+        """Get text content from API response (if any)"""
+        return response.get("choices", [{}])[0].get("message", {}).get("content")
