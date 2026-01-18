@@ -37,6 +37,7 @@ class IssueDTO(BaseModel):
     """Issue response"""
 
     id: int
+    number: int  # The human-readable issue number (e.g., #123)
     title: str
     url: str
     labels: list[str]

@@ -82,20 +82,37 @@ async def analyze_issue(
         agent: AgentService | None = None
         session_id: str | None = None
         solution_data: dict | None = None
+        event_count = 0
+
+        logger.info(f"[SSE] Starting event generator for user {user_id}")
 
         try:
             # Initialize agent service
+            logger.info("[SSE] Initializing OpenRouterService...")
             openrouter = OpenRouterService()
+            logger.info("[SSE] OpenRouterService initialized")
+
+            logger.info("[SSE] Initializing AgentService...")
             agent = AgentService(openrouter)
+            logger.info("[SSE] AgentService initialized")
 
             # Stream events from agent
+            logger.info("[SSE] Starting to stream events from agent...")
             async for event in agent.analyze_issue_stream(request):
+                event_count += 1
+                logger.info(f"[SSE] Received event #{event_count}: type={event.type}")
+
                 # Intercept solution event to save to database
                 if event.type == "solution":
+                    logger.info("[SSE] Processing solution event")
                     solution_data = event.data
+                    logger.info(
+                        f"[SSE] Solution data keys: {list(solution_data.keys()) if solution_data else 'None'}"
+                    )
 
                     # Save session to Supabase
                     try:
+                        logger.info("[SSE] Attempting to save session to database...")
                         session_id = session_dao.create(
                             user_id=user_id,
                             repo_url=request.repo_url,
@@ -103,35 +120,45 @@ async def analyze_issue(
                             issue_title=request.issue_title,
                             solution=solution_data,
                         )
-                        logger.info(
-                            "Session saved to database",
-                            extra={"session_id": session_id},
-                        )
+                        logger.info(f"[SSE] Session saved successfully: {session_id}")
                     except Exception as e:
+                        import traceback
+
                         logger.error(
-                            "Failed to save session",
-                            extra={"error": str(e)},
+                            f"[SSE] Failed to save session: {type(e).__name__}: {e}"
                         )
+                        logger.error(f"[SSE] Traceback: {traceback.format_exc()}")
                         # Still yield the solution even if session save fails
                         session_id = None
 
                     # Yield solution with session_id
+                    event_data = AgentSolutionEvent(
+                        session_id=session_id,
+                        data=solution_data,
+                    ).model_dump_json()
+                    logger.info(
+                        f"[SSE] Yielding solution event (session_id={session_id})"
+                    )
                     yield {
                         "event": "solution",
-                        "data": AgentSolutionEvent(
-                            session_id=session_id,
-                            data=solution_data,
-                        ).model_dump_json(),
+                        "data": event_data,
                     }
                 else:
+                    event_data = event.model_dump_json()
+                    logger.debug(f"[SSE] Yielding event: type={event.type}")
                     yield {
                         "event": event.type,
-                        "data": event.model_dump_json(),
+                        "data": event_data,
                     }
+
+            logger.info(f"[SSE] Finished streaming events. Total events: {event_count}")
 
         except ValueError as e:
             # Configuration errors (missing API keys, etc.)
-            logger.error("Configuration error", extra={"error": str(e)})
+            import traceback
+
+            logger.error(f"[SSE] Configuration error: {e}")
+            logger.error(f"[SSE] Traceback: {traceback.format_exc()}")
             yield {
                 "event": "error",
                 "data": AgentErrorEvent(
@@ -141,7 +168,12 @@ async def analyze_issue(
 
         except Exception as e:
             # Unexpected errors
-            logger.error("Unexpected error during analysis", extra={"error": str(e)})
+            import traceback
+
+            logger.error(
+                f"[SSE] Unexpected error during analysis: {type(e).__name__}: {e}"
+            )
+            logger.error(f"[SSE] Traceback: {traceback.format_exc()}")
             yield {
                 "event": "error",
                 "data": AgentErrorEvent(message=str(e)).model_dump_json(),
@@ -149,12 +181,21 @@ async def analyze_issue(
 
         finally:
             # Always send done event
+            logger.info("[SSE] Sending done event and cleaning up")
             yield {
                 "event": "done",
                 "data": AgentDoneEvent().model_dump_json(),
             }
 
-    return EventSourceResponse(event_generator())
+    return EventSourceResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+        },
+    )
 
 
 @router.post("/implement")
@@ -274,7 +315,15 @@ async def implement_solution(
                 "data": AgentDoneEvent().model_dump_json(),
             }
 
-    return EventSourceResponse(event_generator())
+    return EventSourceResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+        },
+    )
 
 
 @router.get("/sessions/{session_id}", response_model=SessionResponse)

@@ -114,6 +114,7 @@ class GitHubService:
             issues.append(
                 IssueDTO(
                     id=item["id"],
+                    number=item["number"],  # Human-readable issue number
                     title=item["title"],
                     url=item["html_url"],
                     labels=[label["name"] for label in item.get("labels", [])],
@@ -215,7 +216,12 @@ class GitHubService:
         has_good_first_issues: bool = True,
         limit: int = 10,
     ) -> list[RepoDTO]:
-        """Search repositories based on criteria"""
+        """
+        Search repositories based on criteria.
+
+        Note: GitHub API uses OR logic for multiple language filters.
+        If languages=['Python', 'JavaScript'], it returns repos in Python OR JavaScript.
+        """
         query_parts = []
 
         # Add language filters
@@ -256,6 +262,15 @@ class GitHubService:
 
         repos = []
         for item in data.get("items", []):
+            repo_language = item.get("language") or "Unknown"
+
+            # If languages filter was provided, ensure this repo matches
+            # GitHub API might return repos that don't exactly match due to OR logic
+            if languages:
+                languages_lower = [lang.lower() for lang in languages]
+                if repo_language.lower() not in languages_lower:
+                    continue  # Skip repos that don't match user's language preferences
+
             repos.append(
                 RepoDTO(
                     id=item["id"],

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
@@ -13,9 +13,17 @@ import { useAuthStore } from "@/store/authStore";
 const Login = () => {
   const navigate = useNavigate();
   const { mutate: login, isPending } = useLogin();
-  const { error } = useAuthStore();
+  const { error, isLoggedIn } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // Navigate to dashboard after successful login
+  // (useLogin no longer auto-navigates to support the signup flow)
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate("/dashboard");
+    }
+  }, [isLoggedIn, navigate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +39,9 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-[#000000] text-white overflow-hidden selection:bg-[#FF6B00]/30 font-mono">
       {/* Subtle grid pattern */}
-      <div 
+      <div
         className="fixed inset-0 pointer-events-none opacity-[0.015]"
-        style={{ 
+        style={{
           backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
           backgroundSize: '32px 32px'
         }}
@@ -59,7 +67,7 @@ const Login = () => {
 
           {/* Right Nav */}
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => navigate("/onboarding")}
               className="text-[13px] text-white/60 hover:text-white tracking-widest uppercase transition-colors"
             >
@@ -91,7 +99,7 @@ const Login = () => {
               <span className="text-[11px] text-white/50 tracking-[0.3em] uppercase">AUTHENTICATION</span>
               <span className="text-white/30 tracking-[0.3em] text-xs">✶✶✶</span>
             </motion.div>
-            
+
             <motion.h1
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -101,7 +109,7 @@ const Login = () => {
             >
               WELCOME <span className="text-[#FF6B00]">BACK</span>
             </motion.h1>
-            
+
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -161,7 +169,7 @@ const Login = () => {
                       placeholder="user@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-white/[0.02] border border-white/10 px-4 py-3 text-white placeholder-white/30 
+                      className="w-full bg-white/[0.02] border border-white/10 px-4 py-3 text-white placeholder-white/30
                                  focus:outline-none focus:border-[#FF6B00]/50 focus:bg-[#FF6B00]/5
                                  transition-all duration-200 font-mono text-sm tracking-wide"
                       disabled={isPending}
@@ -183,7 +191,7 @@ const Login = () => {
                       placeholder="••••••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-white/[0.02] border border-white/10 px-4 py-3 text-white placeholder-white/30 
+                      className="w-full bg-white/[0.02] border border-white/10 px-4 py-3 text-white placeholder-white/30
                                  focus:outline-none focus:border-[#FF6B00]/50 focus:bg-[#FF6B00]/5
                                  transition-all duration-200 font-mono text-sm tracking-wide"
                       disabled={isPending}
@@ -196,7 +204,7 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="w-full bg-[#FF6B00] text-black py-4 text-sm tracking-[0.2em] uppercase font-bold 
+                  className="w-full bg-[#FF6B00] text-black py-4 text-sm tracking-[0.2em] uppercase font-bold
                              hover:bg-[#FF8533] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed
                              flex items-center justify-center gap-2"
                 >

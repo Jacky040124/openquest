@@ -38,8 +38,9 @@ const initialPreferences: Preferences = {
   project_interests: [],
 };
 
-// Total steps: Welcome(0), Languages(1), Skills(2), IssueTypes(3), ProjectTypes(4), Summary(5), GitHubConnect(6), CreateAccount(7)
-const TOTAL_STEPS = 7;
+// Total steps: Welcome(0), Languages(1), Skills(2), IssueTypes(3), ProjectTypes(4), Summary(5), CreateAccount(6)
+// GitHub OAuth is done after signup in Dashboard
+const TOTAL_STEPS = 6;
 
 export const usePreferencesStore = create<PreferencesState>()(
   persist(
