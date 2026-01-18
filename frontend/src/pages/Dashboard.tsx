@@ -1,12 +1,22 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, Search, Filter, RefreshCw, Code2, Layers, Target, Folder, Edit2 } from 'lucide-react';
+import { User, LogOut, Search, Filter, RefreshCw, Code2, Layers, Target, Folder, Edit2, ArrowUpDown } from 'lucide-react';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { useAuthStore } from '@/store/authStore';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 import RepoCard from '@/components/dashboard/RepoCard';
 import EditPreferencesDialog from '@/components/dashboard/EditPreferencesDialog';
 import SignOutDialog from '@/components/dashboard/SignOutDialog';
+import XPProgressBar from '@/components/dashboard/XPProgressBar';
+import ProfileLevelSection from '@/components/dashboard/ProfileLevelSection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -104,12 +114,36 @@ const Dashboard = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [showEditPreferences, setShowEditPreferences] = useState(false);
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+  const [sortBy, setSortBy] = useState<'match' | 'stars' | 'issues' | 'forks'>('match');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const filteredRepos = mockRepos.filter(repo =>
-    repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    repo.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    repo.topics.some(topic => topic.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredAndSortedRepos = useMemo(() => {
+    const filtered = mockRepos.filter(repo =>
+      repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      repo.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      repo.topics.some(topic => topic.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    return filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'match':
+          comparison = a.matchScore - b.matchScore;
+          break;
+        case 'stars':
+          comparison = a.stars - b.stars;
+          break;
+        case 'issues':
+          comparison = a.goodFirstIssues - b.goodFirstIssues;
+          break;
+        case 'forks':
+          comparison = a.forks - b.forks;
+          break;
+      }
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+  }, [searchQuery, sortBy, sortOrder]);
+
 
   const handleLogoClick = () => {
     if (isLoggedIn) {
@@ -150,7 +184,7 @@ const Dashboard = () => {
       </div>
 
       {/* Header */}
-      <header className="relative z-10 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0">
+      <header className="relative z-50 border-b border-border bg-background sticky top-0">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <motion.div
             className="flex items-center gap-2 cursor-pointer"
@@ -160,6 +194,15 @@ const Dashboard = () => {
           >
             <img src={logo} alt="OpenQuest" className="w-8 h-8 object-contain" />
             <span className="font-semibold text-lg text-foreground">OpenQuest</span>
+          </motion.div>
+
+          {/* XP Progress Bar - Center */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <XPProgressBar />
           </motion.div>
 
           <div className="flex items-center gap-2">
@@ -176,7 +219,7 @@ const Dashboard = () => {
               <PopoverContent align="end" className="w-80 p-0">
                 <div className="p-4">
                   {/* Profile Header */}
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-3 mb-3">
                     <div className="w-12 h-12 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center">
                       <User className="w-6 h-6 text-primary" />
                     </div>
@@ -188,7 +231,10 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  <Separator className="mb-4" />
+                  {/* Level & Badge Section */}
+                  <ProfileLevelSection />
+
+                  <Separator className="my-4" />
 
                   {/* Preferences Summary */}
                   <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -352,10 +398,34 @@ const Dashboard = () => {
                 className="pl-10 bg-card border-border"
               />
             </div>
-            <Button variant="outline" className="gap-2">
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <ArrowUpDown className="w-4 h-4" />
+                  Sort: {sortBy === 'match' ? 'Match %' : sortBy === 'stars' ? 'Stars' : sortBy === 'issues' ? 'Issues' : 'Forks'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setSortBy('match')}>
+                  Match % {sortBy === 'match' && '✓'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy('stars')}>
+                  Stars {sortBy === 'stars' && '✓'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy('issues')}>
+                  Good First Issues {sortBy === 'issues' && '✓'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy('forks')}>
+                  Forks {sortBy === 'forks' && '✓'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}>
+                  {sortOrder === 'desc' ? '↓ Descending' : '↑ Ascending'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" className="gap-2">
               <RefreshCw className="w-4 h-4" />
               Refresh
@@ -369,7 +439,7 @@ const Dashboard = () => {
             transition={{ delay: 0.2 }}
             className="grid gap-4"
           >
-            {filteredRepos.map((repo, index) => (
+            {filteredAndSortedRepos.map((repo, index) => (
               <motion.div
                 key={repo.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -381,7 +451,7 @@ const Dashboard = () => {
             ))}
           </motion.div>
 
-          {filteredRepos.length === 0 && (
+          {filteredAndSortedRepos.length === 0 && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">No repositories found matching your search.</p>
             </div>

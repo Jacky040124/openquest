@@ -19,9 +19,9 @@ const SelectionCard = ({
   size = 'md',
 }: SelectionCardProps) => {
   const sizeClasses = {
-    sm: 'p-3',
-    md: 'p-4',
-    lg: 'p-6',
+    sm: 'p-3 min-h-[80px]',
+    md: 'p-4 min-h-[100px]',
+    lg: 'p-6 min-h-[120px]',
   };
 
   return (
@@ -55,7 +55,7 @@ const SelectionCard = ({
             {title}
           </h3>
           {description && (
-            <p className="text-sm text-muted-foreground mt-0.5 truncate">
+            <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
               {description}
             </p>
           )}

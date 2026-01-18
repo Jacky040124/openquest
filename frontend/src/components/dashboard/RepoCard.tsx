@@ -1,6 +1,7 @@
-import { Star, GitFork, Circle, ExternalLink, AlertCircle } from 'lucide-react';
+import { Star, GitFork, Circle, ExternalLink, AlertCircle, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { calculateRepoXP } from '@/store/levelingStore';
 
 interface Repo {
   id: number;
@@ -14,6 +15,7 @@ interface Repo {
   issueCount: number;
   matchScore: number;
   goodFirstIssues: number;
+  xpReward?: number;
 }
 
 interface RepoCardProps {
@@ -42,12 +44,14 @@ const getLanguageColor = (language: string): string => {
 };
 
 const getMatchScoreColor = (score: number): string => {
-  if (score >= 90) return 'bg-primary/20 text-primary border-primary/30';
-  if (score >= 80) return 'bg-accent/20 text-accent border-accent/30';
-  return 'bg-secondary text-muted-foreground border-border';
+  if (score >= 85) return 'bg-green-500/20 text-green-400 border-green-500/30';
+  if (score >= 70) return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+  return 'bg-red-500/20 text-red-400 border-red-500/30';
 };
 
 const RepoCard = ({ repo }: RepoCardProps) => {
+  const xpReward = repo.xpReward ?? calculateRepoXP(repo);
+  
   return (
     <div className="card-interactive p-5 group">
       <div className="flex items-start justify-between gap-4">
@@ -108,13 +112,17 @@ const RepoCard = ({ repo }: RepoCardProps) => {
           </div>
         </div>
 
-        {/* Match Score */}
-        <div className="flex flex-col items-end gap-3">
+        {/* Match Score & XP */}
+        <div className="flex flex-col items-end gap-2">
           <Badge
             className={`text-sm font-semibold px-3 py-1 ${getMatchScoreColor(repo.matchScore)}`}
           >
             {repo.matchScore}% match
           </Badge>
+          <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/10 rounded-md border border-yellow-500/20">
+            <Zap className="w-3 h-3 text-yellow-400" />
+            <span className="text-xs font-semibold text-yellow-400">+{xpReward} XP</span>
+          </div>
           <Button size="sm" className="btn-primary text-sm">
             View Issues
           </Button>
