@@ -1,6 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, TrendingDown, Users } from 'lucide-react';
-import { api } from '@/lib/api';
+import { TrendingDown, Users } from 'lucide-react';
 import type { ContributionAnalysisDTO } from '@/types/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,52 +9,52 @@ interface ContributionHeatmapProps {
   repoName: string;
 }
 
+// Mock data for demo - hardcoded as requested (no API call to avoid 401 errors)
+const getMockAnalysis = (): ContributionAnalysisDTO => ({
+  heatmap: {
+    matrix: [
+      [45.2, 12.5, 8.3, 38.7, 5.1, 2.4],
+      [28.9, 52.1, 15.6, 18.3, 48.5, 9.2],
+      [12.3, 8.7, 42.8, 6.5, 11.2, 35.4],
+      [5.1, 3.2, 18.9, 2.1, 4.3, 8.7],
+    ],
+    contributors: ['alice-dev', 'bob-contributor', 'charlie-maintainer', 'diana-newcomer'],
+    modules: ['src', 'tests', 'docs', 'api', 'frontend', 'backend'],
+    effort_scores: [],
+  },
+  neglected_modules: [
+    { module: 'docs', days_since_last_activity: 45, total_contributions: 5 },
+    { module: 'config', days_since_last_activity: 32, total_contributions: 2 },
+  ],
+  specializations: {
+    'alice-dev': [
+      { module: 'src', effort_share: 65.5, commits: 42, lines_changed: 1200 },
+      { module: 'api', effort_share: 25.3, commits: 18, lines_changed: 450 },
+    ],
+    'bob-contributor': [
+      { module: 'frontend', effort_share: 58.2, commits: 35, lines_changed: 980 },
+      { module: 'src', effort_share: 28.7, commits: 20, lines_changed: 520 },
+    ],
+    'charlie-maintainer': [
+      { module: 'tests', effort_share: 45.8, commits: 28, lines_changed: 650 },
+      { module: 'docs', effort_share: 32.1, commits: 15, lines_changed: 420 },
+    ],
+    'diana-newcomer': [
+      { module: 'docs', effort_share: 72.3, commits: 15, lines_changed: 280 },
+    ],
+  },
+  summary: {
+    total_contributions: 250,
+    unique_contributors: 4,
+    unique_modules: 6,
+    analysis_period_days: 90,
+  },
+});
+
 const ContributionHeatmap = ({ repoUrl, repoName }: ContributionHeatmapProps) => {
-  const { data: analysis, isLoading, error } = useQuery<ContributionAnalysisDTO>({
-    queryKey: ['contribution-analysis', repoUrl],
-    queryFn: () => api.post<ContributionAnalysisDTO>('/contributions/analyze', {
-      repo_url: repoUrl,
-      days_back: 90,
-    }),
-    enabled: !!repoUrl,
-  });
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-          <Skeleton className="h-4 w-96 mt-2" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-64 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-destructive" />
-            Analysis Error
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Failed to load contribution analysis. This feature uses mock data for demo purposes.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!analysis) {
-    return null;
-  }
-
+  // Use mock data directly - no API call to prevent 401 errors
+  // This is hardcoded for demo purposes as requested
+  const analysis = getMockAnalysis();
   const { heatmap, neglected_modules, specializations, summary } = analysis;
 
   // Normalize matrix values for visualization (0-100 scale)
