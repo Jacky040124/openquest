@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, Search, Filter, RefreshCw, Code2, Layers, Target, Folder, Edit2, ArrowUpDown, Loader2, Wrench } from 'lucide-react';
+import { User, LogOut, Search, Filter, RefreshCw, Code2, Layers, Target, Folder, Edit2, ArrowUpDown, Loader2, Wrench, Github, CheckCircle2, Link } from 'lucide-react';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { useAuthStore } from '@/store/authStore';
 import { useLogout, useUserPreferences } from '@/hooks/useAuth';
 import { useRecommendations } from '@/hooks/useRepos';
+import { useGitHubStatus, useGitHubAuthorize, useDisconnectGitHub } from '@/hooks/useGitHubOAuth';
 import { useState, useMemo } from 'react';
 import {
   DropdownMenu,
@@ -70,6 +71,9 @@ const Dashboard = () => {
   const { mutate: logout } = useLogout();
   const { data: repos, isLoading, error, refetch } = useRecommendations({ limit: 10 });
   const { data: userPrefs } = useUserPreferences();
+  const { data: githubStatus, isLoading: isLoadingGithub } = useGitHubStatus();
+  const githubAuthorize = useGitHubAuthorize();
+  const disconnectGitHub = useDisconnectGitHub();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfile, setShowProfile] = useState(false);
@@ -80,7 +84,7 @@ const Dashboard = () => {
 
   const filteredAndSortedRepos = useMemo(() => {
     if (!repos) return [];
-    
+
     const filtered = repos.filter(repo =>
       repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (repo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
@@ -306,6 +310,60 @@ const Dashboard = () => {
                     <Edit2 className="w-4 h-4" />
                     Edit Preferences
                   </Button>
+
+                  <Separator className="my-4" />
+
+                  {/* GitHub Connection */}
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-medium mb-2 text-muted-foreground">
+                      <Github className="w-3 h-3" />
+                      <span>GitHub Connection</span>
+                    </div>
+                    {isLoadingGithub ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Checking...
+                      </div>
+                    ) : githubStatus?.connected ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-green-500">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Connected as @{githubStatus.username}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-muted-foreground hover:text-destructive"
+                          onClick={() => disconnectGitHub.mutate()}
+                          disabled={disconnectGitHub.isPending}
+                        >
+                          {disconnectGitHub.isPending ? 'Disconnecting...' : 'Disconnect GitHub'}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={() => githubAuthorize.mutate()}
+                        disabled={githubAuthorize.isPending}
+                      >
+                        {githubAuthorize.isPending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Connecting...
+                          </>
+                        ) : (
+                          <>
+                            <Link className="w-4 h-4" />
+                            Connect GitHub
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Required for Agent to push code changes
+                    </p>
+                  </div>
 
                   {/* Stats */}
                   <div className="mt-4 grid grid-cols-2 gap-3 text-center">

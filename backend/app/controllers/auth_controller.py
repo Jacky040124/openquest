@@ -200,13 +200,20 @@ async def create_user_preferences(
         project_interests = [p.value for p in data.project_interests]
         issue_interests = [i.value for i in data.issue_interests]
 
-        # Create new preferences
+        # Create new preferences (include GitHub token if provided during onboarding)
         preference = dao.create_or_update(
             user_id=user_id,
             languages=data.languages,
             skills=skills_data,
             project_interests=project_interests,
             issue_interests=issue_interests,
+            github_token=data.github_token,
+            github_username=data.github_username,
+        )
+
+        logger.info(
+            f"Created preferences for user {user_id}"
+            + (f" with GitHub @{data.github_username}" if data.github_username else "")
         )
 
         return UserPreferenceDTO.from_model(preference)
@@ -356,17 +363,28 @@ async def get_github_status(
 
     try:
         user_id = UUID(str(current_user["id"]))
+        logger.info(f"[GitHub] Checking GitHub status for user: {user_id}")
+
         dao = UserPreferenceDAO(supabase)
         preference = dao.get_by_user_id(user_id)
 
         if not preference:
+            logger.info(f"[GitHub] No preferences found for user: {user_id}")
             return GitHubStatusDTO(connected=False)
 
+        has_token = preference.github_token is not None
+        logger.info(
+            f"[GitHub] User {user_id}: connected={has_token}, "
+            f"username={preference.github_username}, "
+            f"token_present={bool(preference.github_token)}"
+        )
+
         return GitHubStatusDTO(
-            connected=preference.github_token is not None,
+            connected=has_token,
             username=preference.github_username,
         )
     except Exception as e:
+        logger.error(f"[GitHub] Error getting status: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get GitHub status: {str(e)}",
@@ -483,7 +501,7 @@ async def get_github_token(
                 detail="GitHub not connected. Please connect your GitHub account first.",
             )
 
-        return {"token": preference.github_token}
+        return {"github_token": preference.github_token}
     except HTTPException:
         raise
     except Exception as e:

@@ -1,10 +1,14 @@
 """Agent Session Data Access Object - Supabase persistence for agent sessions"""
 
+import logging
+import traceback
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from supabase import Client
+
+logger = logging.getLogger("agent.dao")
 
 
 @dataclass
@@ -56,6 +60,14 @@ class AgentSessionDAO:
         Returns:
             The session ID
         """
+        logger.info(
+            f"Creating session: user_id={user_id}, repo_url={repo_url}, "
+            f"issue_number={issue_number}, issue_title={issue_title[:50]}..."
+        )
+        logger.debug(
+            f"Solution data keys: {list(solution.keys()) if solution else 'None'}"
+        )
+
         now = datetime.now(UTC)
         expires_at = now + timedelta(hours=1)
 
@@ -71,11 +83,23 @@ class AgentSessionDAO:
             "status": "pending",
         }
 
-        response = self.supabase.table(self.table).insert(data).execute()
+        logger.debug(f"Inserting data into {self.table}")
 
-        if response.data:
-            return response.data[0]["id"]
-        raise Exception("Failed to create session")
+        try:
+            response = self.supabase.table(self.table).insert(data).execute()
+            logger.debug(f"Supabase response: data={response.data is not None}")
+
+            if response.data:
+                session_id = response.data[0]["id"]
+                logger.info(f"Session created successfully: {session_id}")
+                return session_id
+
+            logger.error("No data returned from Supabase insert")
+            raise Exception("Failed to create session - no data returned")
+        except Exception as e:
+            logger.error(f"Failed to create session: {type(e).__name__}: {e}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            raise
 
     def get(self, session_id: str) -> AgentSessionRecord | None:
         """

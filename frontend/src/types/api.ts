@@ -185,6 +185,7 @@ export interface RepoRecommendQueryDTO {
 
 export interface IssueDTO {
   id: number;
+  number: number;  // Human-readable issue number (e.g., #123)
   title: string;
   url: string;
   labels: string[];
@@ -283,4 +284,123 @@ export interface GitHubConnectDTO {
 export interface GitHubStatusDTO {
   connected: boolean;
   username?: string;
+}
+
+// ============================================
+// Agent DTOs
+// ============================================
+
+export type AgentStep =
+  | 'cloning'
+  | 'analyzing'
+  | 'proposing'
+  | 'implementing'
+  | 'pushing'
+  | 'done'
+  | 'error';
+
+export interface AgentAnalyzeRequest {
+  repo_url: string;
+  issue_title: string;
+  issue_body: string;
+  issue_number: number;
+}
+
+export interface AgentImplementRequest {
+  session_id: string;
+  branch_name: string;
+  github_token: string;
+  commit_message?: string;
+}
+
+export interface AgentKeyInsight {
+  file: string;
+  line_range: string;
+  code_snippet: string;
+  explanation: string;
+}
+
+export interface AgentCommentToAdd {
+  file: string;
+  line_number: number;
+  comment: string;
+}
+
+export interface AgentSolutionData {
+  summary: string;
+  root_cause_analysis: string;
+  affected_files: string[];
+  key_insights: AgentKeyInsight[];
+  suggested_fix: string;
+  comments_to_add: AgentCommentToAdd[];
+  commit_message: string;
+}
+
+export interface AgentImplementResult {
+  branch: string;
+  branch_url: string;
+  pr_url: string;
+  diff: string;
+}
+
+// SSE Event types
+export interface AgentStatusEvent {
+  type: 'status';
+  step: AgentStep;
+  message: string;
+}
+
+export interface AgentThinkingEvent {
+  type: 'thinking';
+  content: string;
+}
+
+export interface AgentToolEvent {
+  type: 'tool';
+  tool_name: string;
+  tool_input: Record<string, unknown>;
+  tool_result?: string;
+}
+
+export interface AgentSolutionEvent {
+  type: 'solution';
+  session_id: string | null;
+  data: AgentSolutionData;
+}
+
+export interface AgentErrorEvent {
+  type: 'error';
+  message: string;
+}
+
+export interface AgentDoneEvent {
+  type: 'done';
+}
+
+export interface AgentDiffEvent {
+  type: 'diff';
+  data: string;
+}
+
+export interface AgentResultEvent {
+  type: 'result';
+  branch: string;
+  branch_url: string;
+  pr_url: string;
+  diff: string;
+}
+
+export type AgentEvent =
+  | AgentStatusEvent
+  | AgentThinkingEvent
+  | AgentToolEvent
+  | AgentSolutionEvent
+  | AgentErrorEvent
+  | AgentDoneEvent
+  | AgentDiffEvent
+  | AgentResultEvent;
+
+// GitHub Token Response
+export interface GitHubTokenRetrieveResponse {
+  github_token: string;
 }

@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Issues from "./pages/Issues";
+import IssueAnalysis from "./pages/IssueAnalysis";
 import GitHubCallback from "./pages/GitHubCallback";
 import NotFound from "./pages/NotFound";
 
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/onboarding" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/issues" element={<Issues />} />
+          <Route path="/issues/:issueId/analyze" element={<IssueAnalysis />} />
           <Route path="/auth/github/callback" element={<GitHubCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

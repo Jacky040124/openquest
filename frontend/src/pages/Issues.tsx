@@ -1,5 +1,7 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, AlertCircle, MessageSquare, Calendar, Tag, BarChart3 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, AlertCircle, MessageSquare, Calendar, Tag, BarChart3, Play } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import type { IssueDTO, IssueFilterDTO } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,8 +18,8 @@ const Issues = () => {
   const repoName = searchParams.get('repo_name') || 'Repository';
 
   // Parse repo info from URL
-  const [owner, repo] = repoName.includes('/') 
-    ? repoName.split('/') 
+  const [owner, repo] = repoName.includes('/')
+    ? repoName.split('/')
     : ['', repoName];
 
   // Fetch issues with localStorage caching
@@ -31,10 +33,10 @@ const Issues = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
@@ -45,9 +47,9 @@ const Issues = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <img 
-                src={logo} 
-                alt="OpenQuest" 
+              <img
+                src={logo}
+                alt="OpenQuest"
                 className="h-8 w-8 cursor-pointer"
                 onClick={() => navigate('/dashboard')}
               />
@@ -127,8 +129,8 @@ const Issues = () => {
               };
 
               return (
-                <div 
-                  key={issue.id} 
+                <div
+                  key={issue.id}
                   className="card-interactive p-5 hover:shadow-md transition-shadow cursor-pointer"
                   onClick={handleCardClick}
                 >
@@ -146,7 +148,7 @@ const Issues = () => {
                           <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </h3>
                       </a>
-                    
+
                     {/* Labels */}
                     {issue.labels.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-3">
@@ -186,16 +188,34 @@ const Issues = () => {
                       )}
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(issue.url, '_blank');
-                    }}
-                  >
-                    View on GitHub
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/issues/${issue.number}/analyze?${new URLSearchParams({
+                          repo_url: repoUrl,
+                          repo_name: repoName,
+                          title: issue.title,
+                          number: String(issue.number),
+                          url: issue.url,
+                        })}`);
+                      }}
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Analyze with Agent
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(issue.url, '_blank');
+                      }}
+                    >
+                      View on GitHub
+                    </Button>
+                  </div>
                 </div>
               </div>
               );
@@ -222,4 +242,3 @@ const Issues = () => {
 };
 
 export default Issues;
-
