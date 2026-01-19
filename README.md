@@ -1,84 +1,43 @@
-# OpenQuest
+<p align="center">
+  <img src="public/logo.png" alt="OpenQuest Logo" width="120"/>
+</p>
 
-OpenQuest is a gamified platform that helps developers contribute to open-source projects
-based on their skill level, interests, and goals.
+<h1 align="center">OpenQuest</h1>
 
-It's like LeetCode, but for real repositories and real pull requests.
+<p align="center">
+  <strong>Contribute. Intelligently.</strong>
+</p>
 
-## How It Works
+The agentic workflow platform for open source contributions. Find issues matched to your skills, get AI-powered solutions, submit PRs — all automated.
 
-1. **Profile & Skill Assessment**:
-   Users describe their experience, tech stack, and interests.
+## Demo
 
-2. **Repo Matching**:
-   An AI agent recommends open-source GitHub repositories that users can contribute to, based on their skill level and experience in various technologies.
+<p align="center">
+  <img src="public/demo.png" alt="OpenQuest Agent analyzing a GitHub issue" width="800"/>
+</p>
 
-3. **Issue Ranking**:
-   Selected repos are analyzed and issues are ranked by:
-   - Difficulty
-   - Required technologies
-   - Estimated effort
-   - User preferences
+## What makes it different
 
-4. **Guided Contribution**:
-   - A Planner Agent creates a step-by-step contribution plan
-   - A Coding Agent can assist with implementation when requested
+**Agentic** — AI analyzes issues and proposes code changes in real-time
+**Personalized** — Matches repositories to your skill level and interests
+**Gamified** — Level up, earn badges, track your contribution journey
+**Secure** — Code runs in isolated E2B sandboxes, never on your machine
 
-5. **Progression & Rewards**:
-   - Submit a pull request → level up
-   - Unlock harder repositories
-   - Earn nameplates, badges, and prizes
-
-## Tech Stack
-
-### Frontend
-- **Next.js 14** - React full-stack framework with App Router
-- **React 18** - UI library
-- **TypeScript** - Type-safe JavaScript
-- **Tailwind CSS** - Utility-first CSS framework
-- **Zustand** - Lightweight state management
-- **TanStack Query** - Server state management and data fetching
-
-### Backend
-- **FastAPI** - High-performance Python web framework
-- **SQLAlchemy** - Python ORM
-- **Pydantic** - Data validation
-- **Uvicorn** - ASGI server
-
-### Database & Cache
-- **PostgreSQL** - Primary database
-- **Redis** - Caching and session storage
-
-### Authentication
-- **python-jose** - JWT token handling
-
-## Project Structure
+## For developers who want to contribute
 
 ```
-open-source/
-├── frontend/          # Next.js frontend application
-│   ├── app/          # App Router pages
-│   ├── components/   # React components
-│   ├── lib/          # Utility functions
-│   └── package.json  # Frontend dependencies
-├── backend/          # FastAPI backend service
-│   ├── app/          # Application code
-│   │   ├── api/      # API routes
-│   │   ├── models/   # Data models
-│   │   └── services/ # Business logic
-│   └── pyproject.toml # Backend dependencies
-└── README.md
+1. Set your skills     →  Python, React, TypeScript
+2. Get matched         →  Beginner-friendly repos & issues
+3. Let AI analyze      →  Agent explores codebase, proposes fix
+4. Review & submit     →  One-click PR creation
+5. Level up            →  Earn XP, unlock harder challenges
 ```
+
+**Simple workflow. Real contributions.**
 
 ## Quick Start
 
-### Prerequisites
-- Node.js 18+
-- Python 3.11+
-- PostgreSQL 15+
-- Redis 7+
-
-### Frontend Setup
+### Frontend
 
 ```bash
 cd frontend
@@ -86,9 +45,9 @@ npm install
 npm run dev
 ```
 
-Frontend will be available at http://localhost:3000.
+Frontend available at http://localhost:5173
 
-### Backend Setup
+### Backend
 
 ```bash
 cd backend
@@ -96,23 +55,64 @@ uv sync
 uv run uvicorn app.main:app --reload
 ```
 
-Backend API will be available at http://localhost:8000.
+Backend API available at http://localhost:8000
 
-## Development
+## Environment Variables
 
-### Environment Variables
+```bash
+# Backend (.env)
+GITHUB_CLIENT_ID=xxx
+GITHUB_CLIENT_SECRET=xxx
+E2B_API_KEY=xxx
+ANTHROPIC_API_KEY=xxx
+SUPABASE_URL=xxx
+SUPABASE_SERVICE_KEY=xxx
 
-Frontend (frontend/.env.local):
-```
-NEXT_PUBLIC_API_URL=http://localhost:8000
+# Frontend (.env)
+VITE_API_URL=http://localhost:8000
+VITE_GITHUB_CLIENT_ID=xxx
 ```
 
-Backend (backend/.env):
+## How It Works
+
 ```
-DATABASE_URL=postgresql://user:password@localhost:5432/openquest
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your-secret-key
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Profile   │ ──▶ │    Match    │ ──▶ │   Analyze   │ ──▶ │ Contribute  │
+│             │     │             │     │             │     │             │
+│ Set skills  │     │ AI matches  │     │ Agent reads │     │ Create PR   │
+│ & interests │     │ repos/issues│     │ & proposes  │     │ & level up  │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
 ```
+
+## Tech Stack
+
+| Layer | Technologies |
+|-------|-------------|
+| Frontend | React, TypeScript, Vite, Tailwind CSS, Zustand |
+| Backend | FastAPI, Python, Anthropic Claude |
+| Sandbox | E2B (isolated code execution) |
+| Database | Supabase (PostgreSQL) |
+| Auth | GitHub OAuth |
+
+## Architecture
+
+```
+Frontend (React)
+     │
+     │ WebSocket / REST
+     ▼
+Backend (FastAPI)
+     │
+     ├──▶ Claude API (AI reasoning)
+     │
+     └──▶ E2B Sandbox (git clone, code analysis, PR creation)
+              │
+              └──▶ GitHub API (push, create PR)
+```
+
+---
+
+**OpenQuest** — Your AI copilot for open source.
 
 ## License
 
